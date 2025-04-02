@@ -67,7 +67,7 @@ function RequestList() {
             setRequests(response.data);
         } catch (err) {
             console.error("Error fetching requests:", err);
-            setError("Failed to load requests. Please try again later.");
+            setError("Échec du chargement des demandes. Veuillez réessayer plus tard.");
         } finally {
             setLoading(false);
         }
@@ -134,7 +134,7 @@ function RequestList() {
             <Container maxWidth="lg" sx={{ mt: 4, textAlign: "center" }}>
                 <CircularProgress />
                 <Typography variant="body1" sx={{ mt: 2 }}>
-                    Loading requests...
+                    Chargement des demandes...
                 </Typography>
             </Container>
         );
@@ -146,7 +146,7 @@ function RequestList() {
                 <Alert severity="error">{error}</Alert>
                 <Box sx={{ mt: 2, textAlign: "center" }}>
                     <Button variant="contained" onClick={fetchRequests}>
-                        Try Again
+                        Réessayer
                     </Button>
                 </Box>
             </Container>
@@ -156,12 +156,12 @@ function RequestList() {
     return (
         <Container maxWidth="lg" sx={{ mt: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom>
-                Request List
+                Liste des Demandes
             </Typography>
 
             <Box sx={{ mb: 3, display: "flex", flexWrap: "wrap", gap: 2 }}>
                 <TextField
-                    label="Search by name or CIN"
+                    label="Rechercher par nom ou identifiant"
                     variant="outlined"
                     value={searchQuery}
                     onChange={handleSearch}
@@ -173,23 +173,23 @@ function RequestList() {
                 />
 
                 <FormControl sx={{ minWidth: "200px" }} size="small">
-                    <InputLabel id="status-filter-label">Status</InputLabel>
+                    <InputLabel id="status-filter-label">Statut</InputLabel>
                     <Select
                         labelId="status-filter-label"
                         value={statusFilter}
-                        label="Status"
+                        label="Statut"
                         onChange={handleStatusFilterChange}
                     >
-                        <MenuItem value="">All</MenuItem>
-                        <MenuItem value="NOUVEAU">New</MenuItem>
-                        <MenuItem value="EN_TRAITEMENT">In Progress</MenuItem>
-                        <MenuItem value="COMPLETE">Completed</MenuItem>
-                        <MenuItem value="REJETE">Rejected</MenuItem>
+                        <MenuItem value="">Tous</MenuItem>
+                        <MenuItem value="NOUVEAU">Nouveau</MenuItem>
+                        <MenuItem value="EN_TRAITEMENT">En Traitement</MenuItem>
+                        <MenuItem value="COMPLETE">Complété</MenuItem>
+                        <MenuItem value="REJETE">Rejeté</MenuItem>
                     </Select>
                 </FormControl>
 
                 <Button variant="contained" onClick={fetchRequests}>
-                    Refresh
+                    Actualiser
                 </Button>
             </Box>
 
@@ -200,12 +200,12 @@ function RequestList() {
                             <TableHead>
                                 <TableRow>
                                     <TableCell>ID</TableCell>
-                                    <TableCell>Date Submitted</TableCell>
-                                    <TableCell>Name/Company</TableCell>
-                                    <TableCell>Identifier</TableCell>
+                                    <TableCell>Date de Soumission</TableCell>
+                                    <TableCell>Nom/Entreprise</TableCell>
+                                    <TableCell>Identifiant</TableCell>
                                     <TableCell>Type</TableCell>
-                                    <TableCell>Purpose</TableCell>
-                                    <TableCell>Status</TableCell>
+                                    <TableCell>Objet</TableCell>
+                                    <TableCell>Statut</TableCell>
                                     <TableCell>Actions</TableCell>
                                 </TableRow>
                             </TableHead>
@@ -236,7 +236,7 @@ function RequestList() {
                                                 startIcon={<VisibilityIcon />}
                                                 onClick={() => handleViewRequest(request.id)}
                                             >
-                                                View
+                                                Voir
                                             </Button>
                                         </TableCell>
                                     </TableRow>
@@ -257,7 +257,7 @@ function RequestList() {
             ) : (
                 <Paper sx={{ p: 4, textAlign: "center" }}>
                     <Typography variant="body1" gutterBottom>
-                        No requests found.
+                        Aucune demande trouvée.
                     </Typography>
                     {searchQuery || statusFilter ? (
                         <Button
@@ -267,7 +267,7 @@ function RequestList() {
                                 setStatusFilter("");
                             }}
                         >
-                            Clear filters
+                            Effacer les filtres
                         </Button>
                     ) : (
                         currentUser?.role === "ROLE_FRONTDESK" || currentUser?.role === "ROLE_MANAGER" ? (
@@ -276,7 +276,7 @@ function RequestList() {
                                 onClick={() => navigate("/create-request")}
                                 sx={{ mt: 2 }}
                             >
-                                Create New Request
+                                Créer une Nouvelle Demande
                             </Button>
                         ) : null
                     )}

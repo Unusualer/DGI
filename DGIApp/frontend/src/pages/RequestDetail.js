@@ -78,7 +78,7 @@ function RequestDetail() {
             })
             .catch((error) => {
                 console.error("Error fetching request details:", error);
-                setError("Failed to load request details. Please try again.");
+                setError("Échec du chargement des détails de la demande. Veuillez réessayer.");
             })
             .finally(() => {
                 setLoading(false);
@@ -109,7 +109,7 @@ function RequestDetail() {
 
         RequestService.updateRequest(id, requestUpdateData)
             .then((response) => {
-                setSuccess("Request successfully updated!");
+                setSuccess("Demande mise à jour avec succès !");
                 setRequest(response.data);
                 setUpdatingRequest(false);
 
@@ -120,7 +120,7 @@ function RequestDetail() {
                 console.error("Error updating request:", error);
                 setError(
                     error.response?.data?.message ||
-                    "Failed to update request. Please try again."
+                    "Échec de la mise à jour de la demande. Veuillez réessayer."
                 );
             });
     };
@@ -140,7 +140,7 @@ function RequestDetail() {
             <Container maxWidth="lg" sx={{ mt: 4, textAlign: "center" }}>
                 <CircularProgress />
                 <Typography variant="body1" sx={{ mt: 2 }}>
-                    Loading request details...
+                    Chargement des détails de la demande...
                 </Typography>
             </Container>
         );
@@ -152,7 +152,7 @@ function RequestDetail() {
                 <Alert severity="error">{error}</Alert>
                 <Box sx={{ mt: 2, textAlign: "center" }}>
                     <Button variant="contained" onClick={() => navigate("/requests")}>
-                        Back to Requests
+                        Retour aux Demandes
                     </Button>
                 </Box>
             </Container>
@@ -162,7 +162,7 @@ function RequestDetail() {
     return (
         <Container maxWidth="lg" sx={{ mt: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom>
-                Request Details - ID: {id}
+                Détails de la Demande - ID: {id}
             </Typography>
 
             {success && (
@@ -174,13 +174,13 @@ function RequestDetail() {
             {request && (
                 <Paper sx={{ p: 4, mb: 4 }}>
                     <Typography variant="h6" gutterBottom>
-                        Basic Information
+                        Informations de Base
                     </Typography>
 
                     <Grid container spacing={3} sx={{ mb: 4 }}>
                         <Grid item xs={12} sm={6} md={3}>
                             <Typography variant="subtitle2" color="text.secondary">
-                                Entry Date
+                                Date d'Entrée
                             </Typography>
                             <Typography variant="body1">
                                 {formatDate(request.dateEntree)}
@@ -196,7 +196,7 @@ function RequestDetail() {
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
                             <Typography variant="subtitle2" color="text.secondary">
-                                CIN
+                                Identifiant
                             </Typography>
                             <Typography variant="body1">
                                 {request.cin && <span>CIN: {request.cin}</span>}
@@ -206,7 +206,7 @@ function RequestDetail() {
                         </Grid>
                         <Grid item xs={12} sm={6} md={3}>
                             <Typography variant="subtitle2" color="text.secondary">
-                                Status
+                                Statut
                             </Typography>
                             <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                                 {request.etat || "NOUVEAU"}
@@ -214,7 +214,7 @@ function RequestDetail() {
                         </Grid>
                         <Grid item xs={12}>
                             <Typography variant="subtitle2" color="text.secondary">
-                                Name/Company
+                                Nom/Entreprise
                             </Typography>
                             <Typography variant="body1">
                                 {request.raisonSocialeNomsPrenom}
@@ -222,7 +222,7 @@ function RequestDetail() {
                         </Grid>
                         <Grid item xs={12}>
                             <Typography variant="subtitle2" color="text.secondary">
-                                Purpose
+                                Objet
                             </Typography>
                             <Typography variant="body1">
                                 {request.objet || "N/A"}
@@ -230,7 +230,7 @@ function RequestDetail() {
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <Typography variant="subtitle2" color="text.secondary">
-                                Created By
+                                Créé Par
                             </Typography>
                             <Typography variant="body1">
                                 {request.creatorUsername || "N/A"}
@@ -238,10 +238,10 @@ function RequestDetail() {
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <Typography variant="subtitle2" color="text.secondary">
-                                Processed By
+                                Traité Par
                             </Typography>
                             <Typography variant="body1">
-                                {request.agentUsername || "Not yet processed"}
+                                {request.agentUsername || "Pas encore traité"}
                             </Typography>
                         </Grid>
                     </Grid>
@@ -251,7 +251,7 @@ function RequestDetail() {
                             <Divider sx={{ my: 3 }} />
 
                             <Typography variant="h6" gutterBottom>
-                                Update Request
+                                Mettre à Jour la Demande
                             </Typography>
 
                             <Box component="form" onSubmit={handleUpdateRequest}>
@@ -259,7 +259,7 @@ function RequestDetail() {
                                     <Grid item xs={12} sm={6}>
                                         <LocalizationProvider dateAdapter={AdapterDateFns}>
                                             <DatePicker
-                                                label="Processing Date"
+                                                label="Date de Traitement"
                                                 value={dateTraitement}
                                                 onChange={(newDate) => setDateTraitement(newDate)}
                                                 slotProps={{
@@ -271,10 +271,10 @@ function RequestDetail() {
 
                                     <Grid item xs={12} sm={6}>
                                         <FormControl fullWidth>
-                                            <InputLabel>Status</InputLabel>
+                                            <InputLabel>Statut</InputLabel>
                                             <Select
                                                 value={etat}
-                                                label="Status"
+                                                label="Statut"
                                                 onChange={(e) => setEtat(e.target.value)}
                                             >
                                                 <MenuItem value="NOUVEAU">NOUVEAU</MenuItem>
@@ -291,14 +291,14 @@ function RequestDetail() {
                                             label="IF"
                                             value={ifValue}
                                             onChange={(e) => setIfValue(e.target.value)}
-                                            helperText="Tax identification number (IF)"
+                                            helperText="Numéro d'identification fiscale (IF)"
                                         />
                                     </Grid>
 
                                     <Grid item xs={12} sm={6}>
                                         <TextField
                                             fullWidth
-                                            label="Sector"
+                                            label="Secteur"
                                             value={secteur}
                                             onChange={(e) => setSecteur(e.target.value)}
                                         />
@@ -307,7 +307,7 @@ function RequestDetail() {
                                     <Grid item xs={12}>
                                         <TextField
                                             fullWidth
-                                            label="Rejection Reason"
+                                            label="Motif de Rejet"
                                             value={motifRejet}
                                             onChange={(e) => setMotifRejet(e.target.value)}
                                             multiline
@@ -345,7 +345,7 @@ function RequestDetail() {
                                     <Grid item xs={12} sm={6}>
                                         <TextField
                                             fullWidth
-                                            label="Fixed Phone"
+                                            label="Téléphone Fixe"
                                             value={fix}
                                             onChange={(e) => setFix(e.target.value)}
                                         />
@@ -354,7 +354,7 @@ function RequestDetail() {
                                     <Grid item xs={12}>
                                         <TextField
                                             fullWidth
-                                            label="Remarks"
+                                            label="Remarques"
                                             value={remarque}
                                             onChange={(e) => setRemarque(e.target.value)}
                                             multiline
@@ -369,14 +369,14 @@ function RequestDetail() {
                                             color="primary"
                                             disabled={updatingRequest}
                                         >
-                                            {updatingRequest ? "Updating..." : "Update Request"}
+                                            {updatingRequest ? "Mise à jour..." : "Mettre à Jour"}
                                         </Button>
                                         <Button
                                             variant="outlined"
                                             sx={{ mr: 2 }}
                                             onClick={() => navigate("/requests")}
                                         >
-                                            Back to Requests
+                                            Retour aux Demandes
                                         </Button>
                                     </Grid>
                                 </Grid>
@@ -387,7 +387,7 @@ function RequestDetail() {
                     {!canUpdateRequest() && (
                         <Box sx={{ mt: 3, textAlign: "center" }}>
                             <Button variant="contained" onClick={() => navigate("/requests")}>
-                                Back to Requests
+                                Retour aux Demandes
                             </Button>
                         </Box>
                     )}

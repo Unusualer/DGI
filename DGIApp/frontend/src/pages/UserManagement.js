@@ -76,7 +76,7 @@ const UserManagement = () => {
             })
             .catch((error) => {
                 console.error("Error fetching users:", error);
-                setError("Failed to load users. Please try again or use one of the alternative methods below.");
+                setError("Impossible de charger les utilisateurs. Veuillez réessayer ou utiliser l'une des méthodes alternatives ci-dessous.");
             })
             .finally(() => {
                 setLoading(false);
@@ -134,9 +134,9 @@ const UserManagement = () => {
     const validateForm = () => {
         const errors = {};
 
-        if (!formData.username) errors.username = 'Username is required';
-        if (!formData.email) errors.email = 'Email is required';
-        if (dialogType === 'add' && !formData.password) errors.password = 'Password is required';
+        if (!formData.username) errors.username = 'Le nom d\'utilisateur est obligatoire';
+        if (!formData.email) errors.email = 'L\'email est obligatoire';
+        if (dialogType === 'add' && !formData.password) errors.password = 'Le mot de passe est obligatoire';
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
@@ -301,7 +301,7 @@ const UserManagement = () => {
             setFetchMethod('mock');
         } catch (error) {
             console.error("Error with bypass fetch:", error);
-            setError("All data fetch methods failed. Please contact support.");
+            setError("Toutes les méthodes de récupération de données ont échoué. Veuillez contacter le support.");
         } finally {
             setLoading(false);
         }
@@ -317,7 +317,7 @@ const UserManagement = () => {
             return (
                 <>
                     <DialogContentText>
-                        Are you sure you want to delete the user "{editingUser?.username}"? This action cannot be undone.
+                        Êtes-vous sûr de vouloir supprimer l'utilisateur "{editingUser?.username}" ? Cette action ne peut pas être annulée.
                     </DialogContentText>
                 </>
             );
@@ -330,7 +330,7 @@ const UserManagement = () => {
                     margin="dense"
                     id="username"
                     name="username"
-                    label="Username"
+                    label="Nom d'utilisateur"
                     type="text"
                     fullWidth
                     variant="outlined"
@@ -343,7 +343,7 @@ const UserManagement = () => {
                     margin="dense"
                     id="email"
                     name="email"
-                    label="Email Address"
+                    label="Adresse Email"
                     type="email"
                     fullWidth
                     variant="outlined"
@@ -356,7 +356,7 @@ const UserManagement = () => {
                     margin="dense"
                     id="password"
                     name="password"
-                    label={dialogType === 'edit' ? "Password (leave blank to keep current)" : "Password"}
+                    label={dialogType === 'edit' ? "Mot de passe (laisser vide pour conserver l'actuel)" : "Mot de passe"}
                     type="password"
                     fullWidth
                     variant="outlined"
@@ -366,19 +366,19 @@ const UserManagement = () => {
                     helperText={formErrors.password}
                 />
                 <FormControl fullWidth margin="dense">
-                    <InputLabel id="role-label">Role</InputLabel>
+                    <InputLabel id="role-label">Rôle</InputLabel>
                     <Select
                         labelId="role-label"
                         id="role"
                         name="role"
                         value={formData.role}
-                        label="Role"
+                        label="Rôle"
                         onChange={handleInputChange}
                     >
-                        <MenuItem value="admin">Admin</MenuItem>
-                        <MenuItem value="manager">Manager</MenuItem>
-                        <MenuItem value="processing">Processing</MenuItem>
-                        <MenuItem value="frontdesk">Front Desk</MenuItem>
+                        <MenuItem value="admin">Administrateur</MenuItem>
+                        <MenuItem value="manager">Gestionnaire</MenuItem>
+                        <MenuItem value="processing">Traitement</MenuItem>
+                        <MenuItem value="frontdesk">Accueil</MenuItem>
                     </Select>
                 </FormControl>
             </>
@@ -399,10 +399,10 @@ const UserManagement = () => {
         return (
             <Container maxWidth="lg" sx={{ mt: 4 }}>
                 <Alert severity="error">
-                    You do not have permission to access this page. Admin role required.
+                    Vous n'avez pas l'autorisation d'accéder à cette page. Le rôle d'administrateur est requis.
                     {currentUser && (
                         <Typography variant="body2" sx={{ mt: 1 }}>
-                            Current role: {currentUser.role || "No role"}
+                            Rôle actuel : {currentUser.role || "Aucun rôle"}
                         </Typography>
                     )}
                 </Alert>
@@ -414,7 +414,7 @@ const UserManagement = () => {
         <Container maxWidth="lg" sx={{ mt: 4 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h4" component="h1">
-                    User Management
+                    Gestion des Utilisateurs
                 </Typography>
                 <Button
                     variant="contained"
@@ -422,7 +422,7 @@ const UserManagement = () => {
                     startIcon={<AddIcon />}
                     onClick={() => handleOpenDialog('add')}
                 >
-                    Add User
+                    Ajouter un Utilisateur
                 </Button>
             </Box>
 
@@ -436,7 +436,7 @@ const UserManagement = () => {
                             onClick={retryFetch}
                             size="small"
                         >
-                            Retry
+                            Réessayer
                         </Button>
                         <Button
                             variant="outlined"
@@ -444,7 +444,7 @@ const UserManagement = () => {
                             onClick={useTestEndpoint}
                             size="small"
                         >
-                            Use Test Endpoint
+                            Utiliser l'API de Test
                         </Button>
                         <Button
                             variant="outlined"
@@ -452,7 +452,7 @@ const UserManagement = () => {
                             onClick={bypassServerFetch}
                             size="small"
                         >
-                            Load Test Data
+                            Charger des Données de Test
                         </Button>
                     </Box>
                 </Alert>
@@ -460,14 +460,14 @@ const UserManagement = () => {
 
             {!error && fetchMethod !== 'standard' && (
                 <Alert severity="info" sx={{ mb: 3 }}>
-                    Data loaded using {fetchMethod === 'test' ? 'test endpoint' : 'mock data'}.
+                    Données chargées en utilisant {fetchMethod === 'test' ? 'l\'API de test' : 'des données simulées'}.
                     <Button
                         sx={{ ml: 2 }}
                         variant="outlined"
                         size="small"
                         onClick={retryFetch}
                     >
-                        Try Standard Method
+                        Essayer la Méthode Standard
                     </Button>
                 </Alert>
             )}
@@ -477,9 +477,9 @@ const UserManagement = () => {
                     <TableHead>
                         <TableRow>
                             <TableCell>ID</TableCell>
-                            <TableCell>Username</TableCell>
+                            <TableCell>Nom d'utilisateur</TableCell>
                             <TableCell>Email</TableCell>
-                            <TableCell>Role</TableCell>
+                            <TableCell>Rôle</TableCell>
                             <TableCell align="right">Actions</TableCell>
                         </TableRow>
                     </TableHead>
@@ -512,7 +512,7 @@ const UserManagement = () => {
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={5} align="center">
-                                    No users found
+                                    Aucun utilisateur trouvé
                                 </TableCell>
                             </TableRow>
                         )}
@@ -523,19 +523,19 @@ const UserManagement = () => {
             {/* Dialog for CRUD operations */}
             <Dialog open={openDialog} onClose={handleCloseDialog}>
                 <DialogTitle>
-                    {dialogType === 'add' ? 'Add New User' :
-                        dialogType === 'edit' ? 'Edit User' :
-                            'Confirm Deletion'}
+                    {dialogType === 'add' ? 'Ajouter un Nouvel Utilisateur' :
+                        dialogType === 'edit' ? 'Modifier l\'Utilisateur' :
+                            'Confirmer la Suppression'}
                 </DialogTitle>
                 <DialogContent>
                     {renderDialogContent()}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDialog}>Cancel</Button>
+                    <Button onClick={handleCloseDialog}>Annuler</Button>
                     <Button onClick={handleSubmit} color={dialogType === 'delete' ? 'error' : 'primary'}>
-                        {dialogType === 'add' ? 'Create' :
-                            dialogType === 'edit' ? 'Update' :
-                                'Delete'}
+                        {dialogType === 'add' ? 'Créer' :
+                            dialogType === 'edit' ? 'Mettre à jour' :
+                                'Supprimer'}
                     </Button>
                 </DialogActions>
             </Dialog>

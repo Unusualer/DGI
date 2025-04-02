@@ -71,7 +71,7 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                     component="div"
                     sx={{ flexGrow: 1, display: { xs: "none", sm: "block" } }}
                 >
-                    DGI Request Management
+                    Gestion des Demandes DGI
                 </Typography>
 
                 {currentUser ? (
@@ -82,7 +82,7 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                             color="inherit"
                             sx={{ ml: 1, display: { xs: "none", md: "block" } }}
                         >
-                            Home
+                            Accueil
                         </Button>
 
                         {(currentUser.role === "ROLE_FRONTDESK" ||
@@ -94,7 +94,7 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                                     color="inherit"
                                     sx={{ ml: 1, display: { xs: "none", md: "block" } }}
                                 >
-                                    New Request
+                                    Nouvelle Demande
                                 </Button>
                             )}
 
@@ -107,7 +107,7 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                                     color="inherit"
                                     sx={{ ml: 1, display: { xs: "none", md: "block" } }}
                                 >
-                                    Requests
+                                    Demandes
                                 </Button>
                             )}
 
@@ -118,7 +118,7 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                                 color="inherit"
                                 sx={{ ml: 1, display: { xs: "none", md: "block" } }}
                             >
-                                Dashboard
+                                Tableau de Bord
                             </Button>
                         )}
 
@@ -129,7 +129,7 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                                 color="inherit"
                                 sx={{ ml: 1, display: { xs: "none", md: "block" } }}
                             >
-                                Users
+                                Utilisateurs
                             </Button>
                         )}
 
@@ -161,18 +161,18 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                                 {currentUser.username} ({currentUser.role.replace("ROLE_", "")})
                             </MenuItem>
                             <MenuItem component={Link} to="/profile" onClick={handleClose}>
-                                Profile
+                                Profil
                             </MenuItem>
-                            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+                            <MenuItem onClick={handleLogout}>Déconnexion</MenuItem>
                         </Menu>
                     </Box>
                 ) : (
                     <Box>
                         <Button component={Link} to="/login" color="inherit">
-                            Login
+                            Connexion
                         </Button>
                         <Button component={Link} to="/register" color="inherit">
-                            Sign Up
+                            S'inscrire
                         </Button>
                     </Box>
                 )}

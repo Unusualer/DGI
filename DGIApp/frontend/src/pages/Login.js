@@ -49,7 +49,7 @@ function Login() {
         <Container maxWidth="sm" sx={{ pt: 8 }}>
             <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
                 <Typography variant="h4" align="center" gutterBottom>
-                    Login
+                    Connexion
                 </Typography>
 
                 <Box component="form" onSubmit={handleLogin} sx={{ mt: 3 }}>
@@ -65,7 +65,7 @@ function Login() {
                         required
                         fullWidth
                         id="username"
-                        label="Username"
+                        label="Nom d'utilisateur"
                         name="username"
                         autoComplete="username"
                         autoFocus
@@ -79,7 +79,7 @@ function Login() {
                         required
                         fullWidth
                         name="password"
-                        label="Password"
+                        label="Mot de passe"
                         type="password"
                         id="password"
                         autoComplete="current-password"
@@ -94,7 +94,7 @@ function Login() {
                         color="primary"
                         sx={{ mt: 3, mb: 2 }}
                     >
-                        Sign In
+                        Se Connecter
                     </Button>
                 </Box>
             </Paper>

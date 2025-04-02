@@ -87,7 +87,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                         >
                             <HomeIcon />
                         </ListItemIcon>
-                        <ListItemText primary="Home" sx={{ opacity: open ? 1 : 0 }} />
+                        <ListItemText primary="Accueil" sx={{ opacity: open ? 1 : 0 }} />
                     </ListItemButton>
                 </ListItem>
 
@@ -120,7 +120,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                                 <DashboardIcon />
                             </ListItemIcon>
                             <ListItemText
-                                primary="Dashboard"
+                                primary="Tableau de Bord"
                                 sx={{ opacity: open ? 1 : 0 }}
                             />
                         </ListItemButton>
@@ -159,7 +159,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                                     <ListIcon />
                                 </ListItemIcon>
                                 <ListItemText
-                                    primary="Requests"
+                                    primary="Demandes"
                                     sx={{ opacity: open ? 1 : 0 }}
                                 />
                             </ListItemButton>
@@ -200,7 +200,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                                     <AddIcon />
                                 </ListItemIcon>
                                 <ListItemText
-                                    primary="New Request"
+                                    primary="Nouvelle Demande"
                                     sx={{ opacity: open ? 1 : 0 }}
                                 />
                             </ListItemButton>
@@ -235,7 +235,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                             >
                                 <PeopleIcon />
                             </ListItemIcon>
-                            <ListItemText primary="Users" sx={{ opacity: open ? 1 : 0 }} />
+                            <ListItemText primary="Utilisateurs" sx={{ opacity: open ? 1 : 0 }} />
                         </ListItemButton>
                     </ListItem>
                 )}

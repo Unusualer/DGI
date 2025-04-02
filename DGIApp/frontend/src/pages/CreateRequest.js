@@ -44,14 +44,14 @@ function CreateRequest() {
         setMessage("");
 
         if (!raisonSocialeNomsPrenom) {
-            setError("Name/Company is required");
+            setError("Le nom/entreprise est obligatoire");
             setLoading(false);
             return;
         }
 
         // Require at least one identifier: CIN, IF, or ICE
         if (!cin && !ifValue && !ice) {
-            setError("At least one identifier (CIN, IF, or ICE) is required");
+            setError("Au moins un identifiant (CIN, IF ou ICE) est obligatoire");
             setLoading(false);
             return;
         }
@@ -79,7 +79,7 @@ function CreateRequest() {
             const responseData = response.data;
             const requestId = responseData.id;
 
-            setSuccess(`Request created successfully with ID: ${requestId}`);
+            setSuccess(`Demande créée avec succès, ID: ${requestId}`);
 
             // Clear form
             setRaisonSocialeNomsPrenom("");
@@ -92,11 +92,11 @@ function CreateRequest() {
             setSubmitted(false);
         } catch (error) {
             console.error("Error creating request:", error);
-            let errorMessage = "Failed to create request. Please try again.";
+            let errorMessage = "Échec de la création de la demande. Veuillez réessayer.";
 
             if (error.response) {
                 // Handle axios error format
-                errorMessage = error.response.data?.message || `Error ${error.response.status}: ${error.response.statusText}`;
+                errorMessage = error.response.data?.message || `Erreur ${error.response.status}: ${error.response.statusText}`;
                 console.error("Server response:", error.response.data);
             } else if (error.message) {
                 // Handle generic error or fetch error
@@ -115,7 +115,7 @@ function CreateRequest() {
     return (
         <Container maxWidth="md" sx={{ mt: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom>
-                Create New Request
+                Créer une Nouvelle Demande
             </Typography>
 
             <Paper sx={{ p: 4, mt: 3 }}>
@@ -136,7 +136,7 @@ function CreateRequest() {
                         <Grid item xs={12} sm={6}>
                             <LocalizationProvider dateAdapter={AdapterDateFns}>
                                 <DatePicker
-                                    label="Entry Date"
+                                    label="Date d'entrée"
                                     value={dateEntree}
                                     onChange={(newDate) => setDateEntree(newDate)}
                                     renderInput={(params) => <TextField {...params} fullWidth required />}
@@ -166,11 +166,11 @@ function CreateRequest() {
                             <TextField
                                 fullWidth
                                 required
-                                label="Name/Company"
+                                label="Nom/Entreprise"
                                 value={raisonSocialeNomsPrenom}
                                 onChange={(e) => setRaisonSocialeNomsPrenom(e.target.value)}
                                 error={submitted && !raisonSocialeNomsPrenom}
-                                helperText={submitted && !raisonSocialeNomsPrenom ? "Name/Company is required" : ""}
+                                helperText={submitted && !raisonSocialeNomsPrenom ? "Le nom/entreprise est obligatoire" : ""}
                             />
                         </Grid>
 
@@ -181,7 +181,7 @@ function CreateRequest() {
                                 label="CIN"
                                 value={cin}
                                 onChange={(e) => setCin(e.target.value)}
-                                helperText={submitted && !hasIdentifier() ? "At least one identifier is required" : ""}
+                                helperText={submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : ""}
                                 error={submitted && !hasIdentifier()}
                             />
                         </Grid>
@@ -193,7 +193,7 @@ function CreateRequest() {
                                 label="IF"
                                 value={ifValue}
                                 onChange={(e) => setIfValue(e.target.value)}
-                                helperText={submitted && !hasIdentifier() ? "At least one identifier is required" : ""}
+                                helperText={submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : ""}
                                 error={submitted && !hasIdentifier()}
                             />
                         </Grid>
@@ -205,7 +205,7 @@ function CreateRequest() {
                                 label="ICE"
                                 value={ice}
                                 onChange={(e) => setIce(e.target.value)}
-                                helperText={submitted && !hasIdentifier() ? "At least one identifier is required" : ""}
+                                helperText={submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : ""}
                                 error={submitted && !hasIdentifier()}
                             />
                         </Grid>
@@ -213,7 +213,7 @@ function CreateRequest() {
                         <Grid item xs={12}>
                             <TextField
                                 fullWidth
-                                label="Purpose"
+                                label="Objet"
                                 value={objet}
                                 onChange={(e) => setObjet(e.target.value)}
                                 multiline
@@ -229,7 +229,7 @@ function CreateRequest() {
                                 size="large"
                                 disabled={loading || !raisonSocialeNomsPrenom || !hasIdentifier()}
                             >
-                                {loading ? "Creating..." : "Create Request"}
+                                {loading ? "Création en cours..." : "Créer la Demande"}
                             </Button>
                         </Grid>
                     </Grid>

@@ -31,11 +31,11 @@ function Home() {
 
     const getWelcomeMessage = () => {
         if (!currentUser) {
-            return "Welcome to DGI Request Management System";
+            return "Bienvenue au Système de Gestion des Demandes DGI";
         }
 
         let roleName = currentUser.role.replace("ROLE_", "");
-        return `Welcome, ${currentUser.username} (${roleName})`;
+        return `Bienvenue, ${currentUser.username} (${roleName})`;
     };
 
     return (
@@ -54,8 +54,8 @@ function Home() {
                     }}
                 >
                     <Typography variant="body1" paragraph>
-                        This application allows users to submit requests, track their
-                        progress through specific states, and manage ownership of requests.
+                        Cette application permet aux utilisateurs de soumettre des demandes, de suivre leur
+                        progression à travers différents états et de gérer la propriété des demandes.
                     </Typography>
 
                     {!currentUser && (
@@ -67,10 +67,10 @@ function Home() {
                                 color="primary"
                                 sx={{ mr: 2 }}
                             >
-                                Sign In
+                                Se Connecter
                             </Button>
                             <Button component={Link} to="/register" variant="outlined">
-                                Sign Up
+                                S'inscrire
                             </Button>
                         </Box>
                     )}
@@ -96,17 +96,17 @@ function Home() {
                                                 sx={{ fontSize: 60, mb: 2 }}
                                             />
                                             <Typography variant="h6" gutterBottom>
-                                                Dashboard
+                                                Tableau de Bord
                                             </Typography>
                                             <Typography variant="body2" sx={{ mb: 2 }}>
-                                                View all requests and monitor their statuses
+                                                Visualisez toutes les demandes et suivez leur statut
                                             </Typography>
                                             <Button
                                                 component={Link}
                                                 to="/dashboard"
                                                 variant="contained"
                                             >
-                                                Access Dashboard
+                                                Accéder au Tableau de Bord
                                             </Button>
                                         </Box>
                                     </CardContent>
@@ -134,17 +134,17 @@ function Home() {
                                                     sx={{ fontSize: 60, mb: 2 }}
                                                 />
                                                 <Typography variant="h6" gutterBottom>
-                                                    Requests
+                                                    Demandes
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ mb: 2 }}>
-                                                    View and manage your requests
+                                                    Consultez et gérez vos demandes
                                                 </Typography>
                                                 <Button
                                                     component={Link}
                                                     to="/requests"
                                                     variant="contained"
                                                 >
-                                                    View Requests
+                                                    Voir les Demandes
                                                 </Button>
                                             </Box>
                                         </CardContent>
@@ -172,17 +172,17 @@ function Home() {
                                                     sx={{ fontSize: 60, mb: 2 }}
                                                 />
                                                 <Typography variant="h6" gutterBottom>
-                                                    New Request
+                                                    Nouvelle Demande
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ mb: 2 }}>
-                                                    Submit a new request to the system
+                                                    Soumettez une nouvelle demande au système
                                                 </Typography>
                                                 <Button
                                                     component={Link}
                                                     to="/create-request"
                                                     variant="contained"
                                                 >
-                                                    Create Request
+                                                    Créer une Demande
                                                 </Button>
                                             </Box>
                                         </CardContent>
@@ -208,17 +208,17 @@ function Home() {
                                                 sx={{ fontSize: 60, mb: 2 }}
                                             />
                                             <Typography variant="h6" gutterBottom>
-                                                User Management
+                                                Gestion des Utilisateurs
                                             </Typography>
                                             <Typography variant="body2" sx={{ mb: 2 }}>
-                                                Manage system users and their roles
+                                                Gérez les utilisateurs du système et leurs rôles
                                             </Typography>
                                             <Button
                                                 component={Link}
                                                 to="/users"
                                                 variant="contained"
                                             >
-                                                Manage Users
+                                                Gérer les Utilisateurs
                                             </Button>
                                         </Box>
                                     </CardContent>

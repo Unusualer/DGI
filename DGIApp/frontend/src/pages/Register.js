@@ -54,7 +54,7 @@ function Register() {
         <Container maxWidth="sm">
             <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
                 <Typography variant="h4" component="h1" gutterBottom align="center">
-                    Sign Up
+                    Inscription
                 </Typography>
 
                 {message && (
@@ -69,7 +69,7 @@ function Register() {
                         required
                         fullWidth
                         id="username"
-                        label="Username"
+                        label="Nom d'utilisateur"
                         name="username"
                         autoComplete="username"
                         autoFocus
@@ -81,7 +81,7 @@ function Register() {
                         required
                         fullWidth
                         id="email"
-                        label="Email Address"
+                        label="Adresse Email"
                         name="email"
                         autoComplete="email"
                         value={email}
@@ -92,7 +92,7 @@ function Register() {
                         required
                         fullWidth
                         name="password"
-                        label="Password"
+                        label="Mot de passe"
                         type="password"
                         id="password"
                         autoComplete="current-password"
@@ -101,7 +101,7 @@ function Register() {
                     />
 
                     <FormControl component="fieldset" sx={{ mt: 2 }}>
-                        <FormLabel component="legend">Role</FormLabel>
+                        <FormLabel component="legend">Rôle</FormLabel>
                         <RadioGroup
                             row
                             aria-label="role"
@@ -112,22 +112,22 @@ function Register() {
                             <FormControlLabel
                                 value="frontdesk"
                                 control={<Radio />}
-                                label="Front Desk"
+                                label="Accueil"
                             />
                             <FormControlLabel
                                 value="processing"
                                 control={<Radio />}
-                                label="Processing"
+                                label="Traitement"
                             />
                             <FormControlLabel
                                 value="manager"
                                 control={<Radio />}
-                                label="Manager"
+                                label="Gestionnaire"
                             />
                             <FormControlLabel
                                 value="admin"
                                 control={<Radio />}
-                                label="Admin"
+                                label="Administrateur"
                             />
                         </RadioGroup>
                     </FormControl>
@@ -138,7 +138,7 @@ function Register() {
                         variant="contained"
                         sx={{ mt: 3, mb: 2 }}
                     >
-                        Sign Up
+                        S'inscrire
                     </Button>
                 </Box>
             </Paper>
