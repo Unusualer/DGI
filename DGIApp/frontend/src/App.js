@@ -5,7 +5,7 @@ import "./App.css";
 import axios from "axios";
 
 import AuthService from "./services/auth.service";
-import setupAxios from './services/axios-config';
+import { setupAxios } from './services/axios-config';
 
 // Components
 import AppBar from "./components/AppBar";
@@ -23,6 +23,7 @@ import TrackRequest from "./pages/TrackRequest";
 import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
+import EditRequest from "./pages/EditRequest";
 
 const theme = createTheme({
     palette: {
@@ -46,49 +47,49 @@ function App() {
 
     // Initialize auth and axios on first load
     useEffect(() => {
-        console.log("App mounting - initializing auth and axios...");
         setupAxios();
 
         // Handle auth initialization
         const initAuth = () => {
             try {
+                // Check if there's a user in localStorage
                 const user = AuthService.getCurrentUser();
+
                 if (user) {
-                    console.log("User found on app init:", user.username);
-
-                    // Enhanced user role debugging
-                    console.log("User role from localStorage:", user.role);
-
-                    // Check authorities array
-                    if (user.authorities && Array.isArray(user.authorities)) {
-                        console.log("User authorities array:", user.authorities);
-                    } else {
-                        console.log("No authorities array found, using role property:", user.role);
+                    // Validate token before setting user
+                    if (!AuthService.isTokenValid()) {
+                        localStorage.removeItem('user');
+                        setCurrentUser(null);
+                        return;
                     }
 
+                    // Set user state
                     setCurrentUser(user);
-                    // Check if user is admin
-                    setShowAdminBoard(user.role.includes("ADMIN"));
-                    // Check if user is manager
-                    setShowManagerBoard(user.role.includes("MANAGER"));
-                    // Check if user is frontdesk
-                    setShowFrontdeskBoard(user.role.includes("FRONTDESK"));
-                    // Ensure auth header is set by calling setAuthHeader again
-                    if (user.accessToken) {
-                        AuthService.setAuthHeader(user.accessToken);
+
+                    // Set role flags for nav menu
+                    if (user.authorities && Array.isArray(user.authorities)) {
+                        // If authorities array is present, use it
+                        setShowAdminBoard(user.authorities.some(auth => auth.authority === "ROLE_ADMIN"));
+                        setShowManagerBoard(user.authorities.some(auth => auth.authority === "ROLE_MANAGER"));
+                        setShowProcessingBoard(user.authorities.some(auth => auth.authority === "ROLE_PROCESSING"));
+                        setShowFrontdeskBoard(user.authorities.some(auth => auth.authority === "ROLE_FRONTDESK"));
+                    } else {
+                        // Fallback to role property
+                        setShowAdminBoard(user.role.includes("ADMIN"));
+                        setShowManagerBoard(user.role.includes("MANAGER"));
+                        setShowProcessingBoard(user.role.includes("PROCESSING"));
+                        setShowFrontdeskBoard(user.role.includes("FRONTDESK"));
                     }
 
                     // Ensure the token is set in axios headers at application startup
-                    if (user.accessToken) {
-                        console.log("Setting axios auth header on application start");
-                        axios.defaults.headers.common["Authorization"] = `Bearer ${user.accessToken}`;
+                    const token = user.token || user.accessToken;
+                    if (token) {
+                        AuthService.setAuthHeader(token);
                     }
                 } else {
-                    console.log("No user found on app init");
                     setCurrentUser(null);
                 }
             } catch (error) {
-                console.error("Error initializing auth:", error);
                 setCurrentUser(null);
             }
         };
@@ -97,7 +98,6 @@ function App() {
 
         // Register the auth change event listener
         const handleAuthChange = () => {
-            console.log("Auth change event detected");
             const updatedUser = AuthService.getCurrentUser();
 
             if (updatedUser) {
@@ -108,9 +108,9 @@ function App() {
                 setShowFrontdeskBoard(updatedUser.role.includes("FRONTDESK"));
 
                 // Reset axios auth header when auth changes
-                if (updatedUser.accessToken) {
-                    console.log("Updating axios auth header on auth change");
-                    axios.defaults.headers.common["Authorization"] = `Bearer ${updatedUser.accessToken}`;
+                const token = updatedUser.token || updatedUser.accessToken;
+                if (token) {
+                    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
                 }
             } else {
                 // Clear the auth header when logged out
@@ -219,6 +219,15 @@ function App() {
                             element={
                                 <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER", "ROLE_PROCESSING"]}>
                                     <CreateRequest />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="/edit-request/:id"
+                            element={
+                                <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER"]}>
+                                    <EditRequest />
                                 </ProtectedRoute>
                             }
                         />

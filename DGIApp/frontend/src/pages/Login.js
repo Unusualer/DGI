@@ -8,7 +8,10 @@ import {
     Box,
     Alert,
     Paper,
+    CircularProgress,
 } from "@mui/material";
+import axios from "axios";
+import { getServerUrl } from "../services/axios-config";
 import AuthService from "../services/auth.service";
 
 function Login() {
@@ -16,6 +19,7 @@ function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [message, setMessage] = useState("");
+    const [loading, setLoading] = useState(false);
 
     // Check if user is already logged in
     useEffect(() => {
@@ -25,24 +29,52 @@ function Login() {
         }
     }, [navigate]);
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         setMessage("");
+        setLoading(true);
 
-        AuthService.login(username, password)
-            .then(() => {
-                navigate("/");
-                // Don't reload the page, just navigate
-            })
-            .catch((error) => {
-                const resMessage =
-                    (error.response &&
-                        error.response.data &&
-                        error.response.data.message) ||
-                    error.message ||
-                    error.toString();
-                setMessage(resMessage);
+        try {
+            // Direct login without abstractions to debug the issue
+            const loginUrl = `${getServerUrl()}/api/auth/signin`;
+            console.log("Attempting login to:", loginUrl);
+
+            const response = await axios.post(loginUrl, {
+                username,
+                password,
             });
+
+            console.log("Login response:", response.data);
+
+            if (response.data.accessToken) {
+                localStorage.setItem("user", JSON.stringify(response.data));
+                axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.accessToken}`;
+                window.dispatchEvent(new Event('auth-change'));
+                navigate("/");
+            } else {
+                setMessage("Login successful but no token received");
+            }
+        } catch (error) {
+            console.error("Login error:", error);
+
+            let errorMessage = "An error occurred during login";
+
+            if (error.response) {
+                console.error("Error response:", error.response);
+                errorMessage = error.response.data?.message ||
+                    `Server error: ${error.response.status}`;
+            } else if (error.request) {
+                console.error("No response received:", error.request);
+                errorMessage = "No response from server. Please check your connection.";
+            } else {
+                console.error("Error:", error.message);
+                errorMessage = `Error: ${error.message}`;
+            }
+
+            setMessage(errorMessage);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -93,8 +125,9 @@ function Login() {
                         variant="contained"
                         color="primary"
                         sx={{ mt: 3, mb: 2 }}
+                        disabled={loading}
                     >
-                        Se Connecter
+                        {loading ? <CircularProgress size={24} /> : "Se Connecter"}
                     </Button>
                 </Box>
             </Paper>

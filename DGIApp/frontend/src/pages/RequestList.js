@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
+import EditIcon from "@mui/icons-material/Edit";
 import RequestService from "../services/request.service";
 import AuthService from "../services/auth.service";
 
@@ -37,6 +38,8 @@ function RequestList() {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
     const [currentUser, setCurrentUser] = useState(null);
+    const [processingRequests, setProcessingRequests] = useState(false);
+    const [successMessage, setSuccessMessage] = useState(null);
 
     useEffect(() => {
         // Get current user
@@ -50,23 +53,34 @@ function RequestList() {
         setLoading(true);
         setError(null);
         try {
-            let response;
+            // Get current user directly instead of using state
+            // This ensures we always have the latest user data when refreshing
+            const user = AuthService.getCurrentUser();
 
-            // Fetch appropriate requests based on user role
-            if (currentUser?.role === "ROLE_MANAGER") {
-                response = await RequestService.getAllRequests();
-            } else if (currentUser?.role === "ROLE_FRONTDESK") {
-                response = await RequestService.getMySubmissions();
-            } else if (currentUser?.role === "ROLE_PROCESSING") {
-                response = await RequestService.getMyProcessedRequests();
-            } else {
-                // Fallback to tracking endpoint which is accessible to all roles
-                response = await RequestService.getAllRequestsForTracking();
+            console.log("Current user for request fetching:", user);
+
+            if (!user) {
+                console.error("No user found, cannot fetch requests");
+                setError("Session non valide. Veuillez vous reconnecter.");
+                setLoading(false);
+                return;
             }
 
-            setRequests(response.data);
+            // For all user roles, always fetch all requests using the tracking endpoint
+            console.log("Fetching all requests via tracking endpoint");
+            const response = await RequestService.getAllRequestsForTracking();
+
+            console.log("Request response received:", response);
+            if (response && response.data) {
+                console.log("Number of requests fetched:", response.data.length);
+                setRequests(response.data);
+            } else {
+                console.error("Response received but no data property");
+                setRequests([]);
+            }
         } catch (err) {
             console.error("Error fetching requests:", err);
+            console.error("Error details:", JSON.stringify(err, null, 2));
             setError("Échec du chargement des demandes. Veuillez réessayer plus tard.");
         } finally {
             setLoading(false);
@@ -86,6 +100,10 @@ function RequestList() {
         navigate(`/requests/${id}`);
     };
 
+    const handleEditRequest = (id) => {
+        navigate(`/requests/${id}?edit=true`);
+    };
+
     const handleSearch = (event) => {
         setSearchQuery(event.target.value);
         setPage(0);
@@ -96,13 +114,33 @@ function RequestList() {
         setPage(0);
     };
 
+    const handleProcessTodayRequests = () => {
+        setProcessingRequests(true);
+        setSuccessMessage(null);
+        setError(null);
+
+        RequestService.bulkUpdateTodayRequests()
+            .then(response => {
+                setSuccessMessage(`${response.data.updatedCount} demandes ont été mises à jour avec succès.`);
+                fetchRequests(); // Reload the requests to show updated statuses
+            })
+            .catch(err => {
+                console.error("Error processing today's requests:", err);
+                setError(err.response?.data?.message || "Échec de la mise à jour des demandes. Veuillez réessayer.");
+            })
+            .finally(() => {
+                setProcessingRequests(false);
+            });
+    };
+
     // Filter requests based on search query and status filter
     const filteredRequests = requests.filter((request) => {
         const matchesSearch = searchQuery === "" ||
             (request.raisonSocialeNomsPrenom &&
                 request.raisonSocialeNomsPrenom.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (request.cin && request.cin.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (request.ifValue && request.ifValue.toLowerCase().includes(searchQuery.toLowerCase()));
+            (request.ifValue && request.ifValue.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (request.ice && request.ice.toLowerCase().includes(searchQuery.toLowerCase()));
 
         const matchesStatus = statusFilter === "" || request.etat === statusFilter;
 
@@ -120,7 +158,7 @@ function RequestList() {
                 return "info";
             case "EN_TRAITEMENT":
                 return "warning";
-            case "COMPLETE":
+            case "TRAITE":
                 return "success";
             case "REJETE":
                 return "error";
@@ -159,9 +197,15 @@ function RequestList() {
                 Liste des Demandes
             </Typography>
 
+            {successMessage && (
+                <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage(null)}>
+                    {successMessage}
+                </Alert>
+            )}
+
             <Box sx={{ mb: 3, display: "flex", flexWrap: "wrap", gap: 2 }}>
                 <TextField
-                    label="Rechercher par nom ou identifiant"
+                    label="Rechercher par CIN ou IF ou ICE"
                     variant="outlined"
                     value={searchQuery}
                     onChange={handleSearch}
@@ -183,7 +227,7 @@ function RequestList() {
                         <MenuItem value="">Tous</MenuItem>
                         <MenuItem value="NOUVEAU">Nouveau</MenuItem>
                         <MenuItem value="EN_TRAITEMENT">En Traitement</MenuItem>
-                        <MenuItem value="COMPLETE">Complété</MenuItem>
+                        <MenuItem value="TRAITE">Traité</MenuItem>
                         <MenuItem value="REJETE">Rejeté</MenuItem>
                     </Select>
                 </FormControl>
@@ -191,6 +235,17 @@ function RequestList() {
                 <Button variant="contained" onClick={fetchRequests}>
                     Actualiser
                 </Button>
+
+                {currentUser?.role === "ROLE_FRONTDESK" && (
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={handleProcessTodayRequests}
+                        disabled={processingRequests}
+                    >
+                        {processingRequests ? 'Traitement...' : 'Traiter les demandes du jour'}
+                    </Button>
+                )}
             </Box>
 
             {filteredRequests.length > 0 ? (
@@ -218,7 +273,8 @@ function RequestList() {
                                         <TableCell>
                                             {request.cin && `CIN: ${request.cin}`}
                                             {!request.cin && request.ifValue && `IF: ${request.ifValue}`}
-                                            {!request.cin && !request.ifValue && "—"}
+                                            {!request.cin && !request.ifValue && request.ice && `ICE: ${request.ice}`}
+                                            {!request.cin && !request.ifValue && !request.ice && "—"}
                                         </TableCell>
                                         <TableCell>{request.pmPp}</TableCell>
                                         <TableCell>{request.objet}</TableCell>
@@ -230,14 +286,36 @@ function RequestList() {
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                startIcon={<VisibilityIcon />}
-                                                onClick={() => handleViewRequest(request.id)}
-                                            >
-                                                Voir
-                                            </Button>
+                                            {(currentUser?.role === "ROLE_MANAGER" || currentUser?.role === "ROLE_PROCESSING") ? (
+                                                <>
+                                                    <Button
+                                                        variant="contained"
+                                                        size="small"
+                                                        startIcon={<EditIcon />}
+                                                        onClick={() => handleEditRequest(request.id)}
+                                                        sx={{ mr: 1 }}
+                                                    >
+                                                        Modifier
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        startIcon={<VisibilityIcon />}
+                                                        onClick={() => handleViewRequest(request.id)}
+                                                    >
+                                                        Voir
+                                                    </Button>
+                                                </>
+                                            ) : (
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    startIcon={<VisibilityIcon />}
+                                                    onClick={() => handleViewRequest(request.id)}
+                                                >
+                                                    Voir
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -257,7 +335,11 @@ function RequestList() {
             ) : (
                 <Paper sx={{ p: 4, textAlign: "center" }}>
                     <Typography variant="body1" gutterBottom>
-                        Aucune demande trouvée.
+                        {currentUser?.role === "ROLE_PROCESSING"
+                            ? "Aucune demande n'a été assignée à votre compte pour traitement."
+                            : currentUser?.role === "ROLE_FRONTDESK"
+                                ? "Vous n'avez pas encore créé de demandes."
+                                : "Aucune demande trouvée."}
                     </Typography>
                     {searchQuery || statusFilter ? (
                         <Button
@@ -270,15 +352,17 @@ function RequestList() {
                             Effacer les filtres
                         </Button>
                     ) : (
-                        currentUser?.role === "ROLE_FRONTDESK" || currentUser?.role === "ROLE_MANAGER" ? (
-                            <Button
-                                variant="contained"
-                                onClick={() => navigate("/create-request")}
-                                sx={{ mt: 2 }}
-                            >
-                                Créer une Nouvelle Demande
-                            </Button>
-                        ) : null
+                        <>
+                            {(currentUser?.role === "ROLE_FRONTDESK" || currentUser?.role === "ROLE_MANAGER") && (
+                                <Button
+                                    variant="contained"
+                                    onClick={() => navigate("/create-request")}
+                                    sx={{ mt: 2, mr: 2 }}
+                                >
+                                    Créer une Nouvelle Demande
+                                </Button>
+                            )}
+                        </>
                     )}
                 </Paper>
             )}

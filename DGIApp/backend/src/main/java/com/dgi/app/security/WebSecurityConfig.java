@@ -71,52 +71,25 @@ public class WebSecurityConfig implements WebMvcConfigurer {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        System.out.println("DEBUG: Configuring SecurityFilterChain");
+        System.out.println("DEBUG: Configuring security filter chain");
 
-        http.cors(cors -> {
-            System.out.println("DEBUG: Configured CORS");
-            cors.configurationSource(corsConfigurationSource());
-        })
-                .csrf(csrf -> {
-                    System.out.println("DEBUG: CSRF disabled");
-                    csrf.disable();
-                })
-                .exceptionHandling(exception -> {
-                    System.out.println("DEBUG: Configured exception handling");
-                    exception.authenticationEntryPoint(unauthorizedHandler);
-                })
-                .sessionManagement(session -> {
-                    System.out.println("DEBUG: Session management set to STATELESS");
-                    session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        http.csrf(csrf -> csrf.disable())
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // Add security headers
+                .headers(headers -> {
+                    headers.frameOptions().deny();
+                    headers.contentSecurityPolicy(
+                            "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'");
+                    headers.xssProtection();
+                    headers.httpStrictTransportSecurity().includeSubDomains(true).maxAgeInSeconds(31536000);
                 })
                 .authorizeHttpRequests(auth -> {
-                    System.out.println("DEBUG: Configuring request authorization");
+                    System.out.println("DEBUG: Setting request authorization rules");
                     auth.requestMatchers("/api/auth/**").permitAll();
                     auth.requestMatchers("/api/test/**").permitAll();
-                    auth.requestMatchers("/api/test/update-user").permitAll();
-                    auth.requestMatchers("/api/requests/test").permitAll();
-                    auth.requestMatchers("/api/requests/role-test").permitAll();
-                    auth.requestMatchers("/api/users/admin-debug").permitAll();
-                    auth.requestMatchers("/api/auth/profile").authenticated();
-
-                    // Carefully configure user management endpoints with both hasRole and
-                    // hasAuthority methods
-                    // Handle the case where ROLE_ might be included or not in the authority name
-                    auth.requestMatchers(HttpMethod.GET, "/api/users/**")
-                            .hasAnyAuthority("ADMIN", "ROLE_ADMIN");
-                    auth.requestMatchers(HttpMethod.POST, "/api/users/**")
-                            .hasAnyAuthority("ADMIN", "ROLE_ADMIN");
-                    auth.requestMatchers(HttpMethod.PUT, "/api/users/**")
-                            .hasAnyAuthority("ADMIN", "ROLE_ADMIN");
-                    auth.requestMatchers(HttpMethod.DELETE, "/api/users/**")
-                            .hasAnyAuthority("ADMIN", "ROLE_ADMIN");
-
-                    // Manually authorize request endpoints with roles
-                    auth.requestMatchers("/api/requests/").hasAnyAuthority("ROLE_FRONTDESK", "ROLE_MANAGER");
-                    auth.requestMatchers("/api/requests/debug-create").hasAuthority("ROLE_MANAGER");
-                    auth.requestMatchers("/api/requests/manager-only-test").hasAuthority("ROLE_MANAGER");
-                    auth.requestMatchers("/api/requests/create-new").hasAnyAuthority("ROLE_FRONTDESK", "ROLE_MANAGER",
-                            "ROLE_PROCESSING");
+                    auth.requestMatchers("/api/public/**").permitAll();
 
                     auth.anyRequest().authenticated();
                     System.out.println("DEBUG: Request authorization configuration complete");
@@ -134,22 +107,40 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow requests from all origins for debugging
-        configuration.setAllowedOrigins(Arrays.asList("*"));
-        // Allow all methods
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
-        // Allow more headers
+
+        // Allow specific origins based on environment variable, with localhost defaults
+        // for development
+        String allowedOriginsConfig = System.getenv("CORS_ALLOWED_ORIGINS");
+        if (allowedOriginsConfig == null || allowedOriginsConfig.isEmpty()) {
+            // Default to both frontend ports for development
+            configuration.setAllowedOrigins(Arrays.asList(
+                    "http://localhost:3000", // React dev server
+                    "http://localhost:8080" // When served through backend
+            ));
+            logger.info("Using default development CORS configuration");
+        } else {
+            configuration.setAllowedOrigins(
+                    Arrays.asList(allowedOriginsConfig.split(",")));
+            logger.info("Using configured CORS allowed origins: {}", allowedOriginsConfig);
+        }
+
+        // Limit allowed methods to only necessary ones
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // Limit allowed headers to necessary ones
         configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization", "Content-Type", "X-Auth-Token", "Origin", "Accept", "X-Requested-With",
-                "Access-Control-Request-Method", "X-Debug-Info",
-                "Access-Control-Request-Headers", "Cache-Control", "Pragma", "Expires"));
+                "Authorization", "Content-Type", "X-Auth-Token", "Origin",
+                "Accept", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+
         configuration.setExposedHeaders(Arrays.asList("X-Auth-Token", "Authorization"));
-        // Allow credentials if needed
-        configuration.setAllowCredentials(Boolean.FALSE);
+        configuration.setAllowCredentials(Boolean.TRUE);
+
+        // Set max age for preflight requests
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-        System.out.println("DEBUG: CORS Configuration initialized with all origins");
         return source;
     }
 

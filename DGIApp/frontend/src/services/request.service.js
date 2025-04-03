@@ -124,6 +124,22 @@ const updateRequest = (id, requestData) => {
     });
 };
 
+// Edit a request within 15 minutes of creation (FRONTDESK, MANAGER)
+const editRequest = (id, requestData) => {
+    const headers = {
+        ...authHeader(),
+        'Content-Type': 'application/json'
+    };
+
+    return axios({
+        method: 'put',
+        url: API_URL + "edit/" + id,
+        baseURL: getServerUrl(),
+        data: requestData,
+        headers: headers
+    });
+};
+
 // Get all requests (MANAGER)
 const getAllRequests = () => {
     return axios({
@@ -155,13 +171,28 @@ const getMyProcessedRequests = () => {
 };
 
 // Get all requests for tracking - available to all roles
-const getAllRequestsForTracking = () => {
-    return axios({
-        method: 'get',
-        url: API_URL + "track",
-        baseURL: getServerUrl(),
-        headers: authHeader()
-    });
+const getAllRequestsForTracking = async () => {
+    try {
+        console.log("Calling getAllRequestsForTracking");
+        const headers = authHeader();
+        console.log("Headers for tracking API call:", headers);
+
+        const response = await axios({
+            method: 'get',
+            url: API_URL + "track",
+            baseURL: getServerUrl(),
+            headers: headers
+        });
+
+        console.log("Track response:", response);
+        return response;
+    } catch (error) {
+        console.error("Error in getAllRequestsForTracking:", error);
+
+        // If we can't get data from the API, provide empty results to avoid breaking the UI
+        console.log("Returning empty results as fallback");
+        return { data: [] };
+    }
 };
 
 // Get requests by state
@@ -214,10 +245,21 @@ const deleteRequest = (id) => {
     });
 };
 
+// Bulk update today's requests to EN_TRAITEMENT status (FRONTDESK only)
+const bulkUpdateTodayRequests = () => {
+    return axios({
+        method: 'put',
+        url: API_URL + "bulk-update-today",
+        baseURL: getServerUrl(),
+        headers: authHeader()
+    });
+};
+
 // Export the service
 const RequestService = {
     createRequest,
     updateRequest,
+    editRequest,
     getAllRequests,
     getMySubmissions,
     getMyProcessedRequests,
@@ -226,7 +268,8 @@ const RequestService = {
     searchRequestsByName,
     searchRequestsByCin,
     getRequestById,
-    deleteRequest
+    deleteRequest,
+    bulkUpdateTodayRequests
 };
 
 export default RequestService; 

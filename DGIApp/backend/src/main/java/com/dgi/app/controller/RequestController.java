@@ -195,6 +195,23 @@ public class RequestController {
             request.setFix(updateRequest.getFix());
             request.setRemarque(updateRequest.getRemarque());
 
+            // Update additional fields
+            if (updateRequest.getCin() != null) {
+                request.setCin(updateRequest.getCin());
+            }
+            if (updateRequest.getIce() != null) {
+                request.setIce(updateRequest.getIce());
+            }
+            if (updateRequest.getRaisonSocialeNomsPrenom() != null) {
+                request.setRaisonSocialeNomsPrenom(updateRequest.getRaisonSocialeNomsPrenom());
+            }
+            if (updateRequest.getPmPp() != null) {
+                request.setPmPp(updateRequest.getPmPp());
+            }
+            if (updateRequest.getObjet() != null) {
+                request.setObjet(updateRequest.getObjet());
+            }
+
             // Set the processing agent
             request.setAgent(currentUser);
             request.setUpdatedAt(LocalDateTime.now());
@@ -484,6 +501,108 @@ public class RequestController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new MessageResponse("Error creating request: " + e.getMessage()));
+        }
+    }
+
+    // Bulk update today's requests to EN_TRAITEMENT status - FRONTDESK only
+    @PutMapping("/bulk-update-today")
+    @PreAuthorize("hasRole('FRONTDESK')")
+    public ResponseEntity<?> bulkUpdateTodayRequests() {
+        try {
+            User currentUser = getCurrentUser();
+
+            // Get today's date at the start of the day
+            LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
+            LocalDateTime endOfDay = LocalDateTime.now().toLocalDate().atTime(23, 59, 59);
+
+            // Find all NOUVEAU requests created by the current user today
+            List<Request> todaysRequests = requestRepository.findByCreatorAndCreatedAtBetweenAndEtat(
+                    currentUser, startOfDay, endOfDay, "NOUVEAU");
+
+            if (todaysRequests.isEmpty()) {
+                return ResponseEntity.ok(Map.of("updatedCount", 0, "message", "No new requests found for today"));
+            }
+
+            // Update all found requests to EN_TRAITEMENT
+            for (Request request : todaysRequests) {
+                request.setEtat("EN_TRAITEMENT");
+                request.setUpdatedAt(LocalDateTime.now());
+            }
+
+            requestRepository.saveAll(todaysRequests);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("updatedCount", todaysRequests.size());
+            response.put("message", "Successfully updated " + todaysRequests.size() + " requests");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("Error updating requests: " + e.getMessage()));
+        }
+    }
+
+    // Edit a request by creator within 15 minutes of creation
+    @PutMapping("/edit/{id}")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    public ResponseEntity<?> editRequest(@PathVariable Long id, @Valid @RequestBody RequestCreateRequest editRequest) {
+        try {
+            // Get current user
+            User currentUser = getCurrentUser();
+
+            // Find the request
+            Optional<Request> requestData = requestRepository.findById(id);
+
+            if (!requestData.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new MessageResponse("Error: Request not found"));
+            }
+
+            Request request = requestData.get();
+
+            // Check if the current user is the creator of the request or a manager
+            if (!request.getCreator().getId().equals(currentUser.getId()) &&
+                    !currentUser.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER"))) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new MessageResponse("Error: You are not authorized to edit this request"));
+            }
+
+            // Check if the request was created within the last 15 minutes
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime createdTime = request.getCreatedAt();
+            long minutesDiff = java.time.Duration.between(createdTime, now).toMinutes();
+
+            // Allow managers to edit anytime, frontdesk only within 15 minutes
+            if (minutesDiff > 15
+                    && !currentUser.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER"))) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new MessageResponse("Error: Request can only be edited within 15 minutes of creation"));
+            }
+
+            // Validate that at least one identifier is provided
+            if (isEmpty(editRequest.getCin()) && isEmpty(editRequest.getIfValue())
+                    && isEmpty(editRequest.getIce())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new MessageResponse("Error: At least one identifier (CIN, IF, or ICE) must be provided"));
+            }
+
+            // Update request fields that are editable by frontdesk
+            request.setDateEntree(editRequest.getDateEntree());
+            request.setRaisonSocialeNomsPrenom(editRequest.getRaisonSocialeNomsPrenom());
+            request.setCin(editRequest.getCin());
+            request.setPmPp(editRequest.getPmPp());
+            request.setObjet(editRequest.getObjet());
+            request.setIfValue(editRequest.getIfValue());
+            request.setIce(editRequest.getIce());
+            request.setUpdatedAt(LocalDateTime.now());
+
+            // Save the updated request
+            Request savedRequest = requestRepository.save(request);
+            return ResponseEntity.ok(convertToDTO(savedRequest));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new MessageResponse("Error editing request: " + e.getMessage()));
         }
     }
 

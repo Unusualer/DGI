@@ -1,45 +1,39 @@
 import axios from 'axios';
+import authHeader from './auth-header';
+import AuthService from './auth.service';
 
-// Get server URL based on environment
-export const getServerUrl = () => {
-    // When in development mode (localhost:3000)
-    if (window.location.hostname === 'localhost' && window.location.port === '3000') {
-        console.log('Running in development mode - using backend server directly');
-        return 'http://localhost:8080'; // Point directly to the backend
+// Default API URL
+const getServerUrl = () => {
+    // Production environment
+    if (process.env.NODE_ENV === 'production') {
+        return '';  // In production, use relative path for same-origin API
     }
 
-    // When running in production (Docker/nginx)
-    return ''; // Use empty string for relative URLs through nginx proxy
+    // Development environment - use localhost with backend port
+    // Use env var if available, otherwise default to 8080
+    const backendPort = process.env.REACT_APP_BACKEND_PORT || '8080';
+    return `http://localhost:${backendPort}`;
 };
 
 // Set default base URL
 const baseURL = getServerUrl();
-axios.defaults.baseURL = baseURL;
-console.log('Setting axios.defaults.baseURL to:', baseURL);
 
-// Initialize axios with global configs
+// Configure axios
 const setupAxios = () => {
-    // Set default config
-    axios.defaults.headers.common['Content-Type'] = 'application/json';
-    axios.defaults.withCredentials = false; // Set to true if you need to send cookies
+    // Set the base URL globally
+    axios.defaults.baseURL = baseURL;
 
-    // Request interceptor
+    // Request interceptor for adding auth headers and logging
     axios.interceptors.request.use(
         (config) => {
-            // Ensure content type is set properly
-            if (!config.headers['Content-Type'] &&
-                (config.method === 'post' || config.method === 'put' || config.method === 'patch')) {
-                config.headers['Content-Type'] = 'application/json';
-            }
+            // Add timestamp to querystring to prevent caching (especially for IE)
+            const separator = config.url.indexOf('?') === -1 ? '?' : '&';
+            config.url = `${config.url}${separator}_ts=${new Date().getTime()}`;
 
-            // Make sure we always have the right baseURL for API requests
+            // Ensure API requests have the correct baseURL
             if (config.url && config.url.startsWith('/api/')) {
                 config.baseURL = baseURL;
             }
-
-            // Log request details
-            console.log(`Request: ${config.method?.toUpperCase() || 'GET'} ${config.baseURL || ''}${config.url || ''}`);
-            console.log('Headers:', JSON.stringify(config.headers || {}));
 
             return config;
         },
@@ -51,32 +45,35 @@ const setupAxios = () => {
     // Response interceptor for error handling
     axios.interceptors.response.use(
         (response) => {
-            // Log successful responses
-            console.log(`Response ${response.status} from ${response.config.url}`);
             return response;
         },
-        (error) => {
-            if (error.response) {
-                console.error('API Error:', error.response.status, error.response.data);
-
-                // Log detailed error info
-                console.error('URL:', error.config?.url);
-                console.error('Method:', error.config?.method);
-                console.error('Headers:', error.config?.headers);
-                console.error('Data:', error.config?.data);
-
-                // Show the actual response
-                if (error.response.data) {
-                    console.error('Response data:', error.response.data);
+        async (error) => {
+            // Don't log sensitive information in production
+            if (process.env.NODE_ENV !== 'production') {
+                // Simplified error logging in development only
+                if (error.response) {
+                    console.error(`API Error: ${error.response.status} - ${error.config?.url}`);
+                } else {
+                    console.error(`API Error: ${error.message}`);
                 }
-            } else if (error.request) {
-                console.error('Request Error (No Response):', error.request);
-            } else {
-                console.error('Error:', error.message);
             }
+
+            // Handle 401 errors or other special cases here
+
+            // Retry only GET requests with 5xx server errors
+            const { config } = error;
+
+            // Only retry GET requests with server errors (5xx)
+            if (config && error.response && error.response.status >= 500 && config.method === 'get') {
+                // Simple retry logic
+                return new Promise((resolve) => {
+                    setTimeout(() => resolve(axios(config)), 1000);
+                });
+            }
+
             return Promise.reject(error);
         }
     );
 };
 
-export default setupAxios; 
+export { getServerUrl, setupAxios }; 

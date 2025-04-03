@@ -56,6 +56,13 @@ function CreateRequest() {
             return;
         }
 
+        // Require objet field
+        if (!objet) {
+            setError("L'objet de la demande est obligatoire");
+            setLoading(false);
+            return;
+        }
+
         // Format the date to ISO string (YYYY-MM-DD)
         const formattedDateEntree = dateEntree.toISOString().split('T')[0];
 
@@ -216,8 +223,12 @@ function CreateRequest() {
                                 label="Objet"
                                 value={objet}
                                 onChange={(e) => setObjet(e.target.value)}
-                                multiline
+
                                 rows={4}
+                                required
+                                error={submitted && !objet}
+                                helperText={submitted && !objet ? "L'objet de la demande est obligatoire" : ""}
+                                placeholder="Décrivez l'objet de la demande en détail"
                             />
                         </Grid>
 
@@ -227,7 +238,7 @@ function CreateRequest() {
                                 variant="contained"
                                 color="primary"
                                 size="large"
-                                disabled={loading || !raisonSocialeNomsPrenom || !hasIdentifier()}
+                                disabled={loading || !raisonSocialeNomsPrenom || !hasIdentifier() || !objet}
                             >
                                 {loading ? "Création en cours..." : "Créer la Demande"}
                             </Button>

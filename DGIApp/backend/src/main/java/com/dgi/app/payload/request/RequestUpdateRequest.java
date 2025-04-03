@@ -36,6 +36,22 @@ public class RequestUpdateRequest {
     @Size(max = 1000)
     private String remarque;
 
+    // Additional fields
+    @Size(max = 20)
+    private String cin;
+
+    @Size(max = 20)
+    private String ice;
+
+    @Size(max = 255)
+    private String raisonSocialeNomsPrenom;
+
+    @Size(max = 10)
+    private String pmPp;
+
+    @Size(max = 1000)
+    private String objet;
+
     public RequestUpdateRequest() {
         this.dateTraitement = LocalDate.now(); // Default to today
     }
@@ -118,5 +134,46 @@ public class RequestUpdateRequest {
 
     public void setRemarque(String remarque) {
         this.remarque = remarque;
+    }
+
+    // Getters and setters for additional fields
+    public String getCin() {
+        return cin;
+    }
+
+    public void setCin(String cin) {
+        this.cin = cin;
+    }
+
+    public String getIce() {
+        return ice;
+    }
+
+    public void setIce(String ice) {
+        this.ice = ice;
+    }
+
+    public String getRaisonSocialeNomsPrenom() {
+        return raisonSocialeNomsPrenom;
+    }
+
+    public void setRaisonSocialeNomsPrenom(String raisonSocialeNomsPrenom) {
+        this.raisonSocialeNomsPrenom = raisonSocialeNomsPrenom;
+    }
+
+    public String getPmPp() {
+        return pmPp;
+    }
+
+    public void setPmPp(String pmPp) {
+        this.pmPp = pmPp;
+    }
+
+    public String getObjet() {
+        return objet;
+    }
+
+    public void setObjet(String objet) {
+        this.objet = objet;
     }
 }

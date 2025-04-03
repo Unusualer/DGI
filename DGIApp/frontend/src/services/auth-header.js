@@ -1,31 +1,30 @@
 export default function authHeader() {
     const user = JSON.parse(localStorage.getItem('user'));
 
-    if (user && user.accessToken) {
-        // Show token details
-        const token = user.accessToken;
-        console.log("Found user token:", token.substring(0, 20) + "...");
-        console.log("User role from localStorage:", user.role);
-        console.log("User username from localStorage:", user.username);
+    if (user && (user.token || user.accessToken)) {
+        // Get token from either property
+        const token = user.token || user.accessToken;
 
-        // Parse token parts for debugging
+        // Check if the token is expired
         try {
-            const parts = token.split('.');
-            if (parts.length === 3) {
-                const header = JSON.parse(atob(parts[0]));
-                const payload = JSON.parse(atob(parts[1]));
-                console.log("Token header:", header);
-                console.log("Token payload:", payload);
-            } else {
-                console.warn("Token does not have standard JWT format");
-            }
-        } catch (e) {
-            console.error("Error parsing token:", e);
-        }
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const tokenData = JSON.parse(window.atob(base64));
 
-        return { 'Authorization': `Bearer ${token}` };
+            // Check token expiration
+            const currentTime = Date.now() / 1000;
+            if (tokenData.exp && tokenData.exp < currentTime) {
+                // Token is expired but we'll let the backend handle rejection
+                // This prevents logout on refresh issues
+            }
+
+            return { Authorization: 'Bearer ' + token };
+        } catch (error) {
+            // Return the token even if we can't parse it
+            // Backend will validate and reject if needed
+            return { Authorization: 'Bearer ' + token };
+        }
     } else {
-        console.log("No user token found in localStorage");
         return {};
     }
 } 

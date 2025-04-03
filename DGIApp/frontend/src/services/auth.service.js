@@ -6,14 +6,12 @@ const API_URL = "/api/auth/";
 // Validate if a token has a valid JWT structure (not checking signature)
 const isValidTokenFormat = (token) => {
     if (!token || typeof token !== 'string') {
-        console.error("Token is missing or not a string");
         return false;
     }
 
     // JWT consists of 3 parts separated by dots
     const parts = token.split('.');
     if (parts.length !== 3) {
-        console.error("Token does not have 3 parts");
         return false;
     }
 
@@ -23,7 +21,6 @@ const isValidTokenFormat = (token) => {
         JSON.parse(atob(parts[1]));
         return true;
     } catch (e) {
-        console.error("Failed to parse token parts:", e);
         return false;
     }
 };
@@ -32,11 +29,8 @@ const isValidTokenFormat = (token) => {
 const setAuthHeader = (token) => {
     if (token && isValidTokenFormat(token)) {
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        console.log("Auth header set with token:", token.substring(0, 15) + "...");
-        console.log("Full Authorization header:", axios.defaults.headers.common["Authorization"]);
     } else {
         delete axios.defaults.headers.common["Authorization"];
-        console.log("Auth header removed");
     }
 };
 
@@ -49,34 +43,28 @@ const register = (username, email, password) => {
 };
 
 const login = (username, password) => {
-    console.log("Login attempt for:", username);
+    // Ensure we're using the correct baseURL for this request
+    const url = API_URL + "signin";
     return axios
-        .post(API_URL + "signin", {
+        .post(url, {
             username,
             password,
         })
         .then((response) => {
-            console.log("Login successful, saving user data");
-
             if (response.data.accessToken) {
                 // Validate token format before saving
-                if (!isValidTokenFormat(response.data.accessToken)) {
-                    console.error("Received invalid token format from server");
-                } else {
-                    console.log("Token format is valid");
+                if (isValidTokenFormat(response.data.accessToken)) {
+                    localStorage.setItem("user", JSON.stringify(response.data));
+
+                    // Set the auth header globally for all future requests
+                    setAuthHeader(response.data.accessToken);
+
+                    // Force axios to use the token for all future requests
+                    axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.accessToken}`;
+
+                    // Dispatch an event so other components know authentication changed
+                    window.dispatchEvent(new Event('auth-change'));
                 }
-
-                localStorage.setItem("user", JSON.stringify(response.data));
-
-                // Explicitly set the auth header globally for all future requests
-                setAuthHeader(response.data.accessToken);
-
-                // Force axios to use the token for all future requests
-                axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.accessToken}`;
-                console.log("Auth header forcefully set directly:", axios.defaults.headers.common["Authorization"]);
-
-                // Dispatch an event so other components know authentication changed
-                window.dispatchEvent(new Event('auth-change'));
             }
 
             return response.data;
@@ -84,7 +72,6 @@ const login = (username, password) => {
 };
 
 const logout = () => {
-    console.log("Logging out user");
     localStorage.removeItem("user");
     delete axios.defaults.headers.common["Authorization"];
 
@@ -96,21 +83,19 @@ const getCurrentUser = () => {
     try {
         const userStr = localStorage.getItem("user");
         if (!userStr) {
-            console.log("No user found in localStorage");
             return null;
         }
 
         const user = JSON.parse(userStr);
-        console.log("User found in localStorage:", user.username);
 
         // Set auth header if it's not already set
-        if (user && user.accessToken && !axios.defaults.headers.common["Authorization"]) {
-            setAuthHeader(user.accessToken);
+        const token = user.token || user.accessToken;
+        if (user && token && !axios.defaults.headers.common["Authorization"]) {
+            setAuthHeader(token);
         }
 
         return user;
     } catch (error) {
-        console.error("Error getting current user:", error);
         return null;
     }
 };
@@ -153,6 +138,40 @@ const changePassword = async (newPassword) => {
     );
 };
 
+// Check if current token is valid
+const isTokenValid = () => {
+    const user = getCurrentUser();
+    if (!user) {
+        return false;
+    }
+
+    const token = user.token || user.accessToken;
+    if (!token) {
+        return false;
+    }
+
+    try {
+        // Parse the JWT payload
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+
+        // Check if token is expired
+        const currentTime = Date.now() / 1000;
+
+        if (payload.exp && payload.exp < currentTime) {
+            console.log(`Token expired at ${new Date(payload.exp * 1000).toISOString()}`);
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Error validating token:", error);
+        // Return false on parsing errors to force re-authentication
+        return false;
+    }
+};
+
 const AuthService = {
     register,
     login,
@@ -160,7 +179,8 @@ const AuthService = {
     getCurrentUser,
     getProfile,
     changePassword,
-    setAuthHeader
+    setAuthHeader,
+    isTokenValid
 };
 
 export default AuthService; 

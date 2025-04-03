@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
     Container,
     Typography,
@@ -14,7 +14,13 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow
 } from "@mui/material";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -25,6 +31,7 @@ import AuthService from "../services/auth.service";
 function RequestDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -43,6 +50,18 @@ function RequestDetail() {
     const [fix, setFix] = useState("");
     const [remarque, setRemarque] = useState("");
     const [updatingRequest, setUpdatingRequest] = useState(false);
+    const [cin, setCin] = useState("");
+    const [ice, setIce] = useState("");
+    const [canEdit, setCanEdit] = useState(false);
+    const [timeLeftToEdit, setTimeLeftToEdit] = useState(0);
+
+    // Add an additional field for the request raison sociale / nom
+    const [raisonSocialeNomsPrenom, setRaisonSocialeNomsPrenom] = useState('');
+    const [pmPp, setPmPp] = useState('');
+    const [objet, setObjet] = useState('');
+
+    // Check if we have an edit query parameter
+    const shouldShowEditForm = new URLSearchParams(location.search).get('edit') === 'true';
 
     useEffect(() => {
         const user = AuthService.getCurrentUser();
@@ -52,27 +71,65 @@ function RequestDetail() {
         fetchRequestDetails();
     }, [id]);
 
+    useEffect(() => {
+        // Check if the request can be edited (within 15 minutes of creation)
+        if (request && request.createdAt && currentUser) {
+            const createdAt = new Date(request.createdAt);
+            const now = new Date();
+            const diffMs = now - createdAt;
+            const diffMins = Math.floor(diffMs / 60000);
+            const timeLeft = 15 - diffMins;
+
+            const isCreator = currentUser.id === request.creatorId;
+            const isManager = currentUser.role === "ROLE_MANAGER";
+            const isFrontdesk = currentUser.role === "ROLE_FRONTDESK";
+
+            setTimeLeftToEdit(timeLeft > 0 ? timeLeft : 0);
+            // Frontdesk can edit their own requests within time limit, managers can edit any request
+            setCanEdit((timeLeft > 0 && isCreator && isFrontdesk) || isManager);
+        }
+    }, [request, currentUser]);
+
+    // Add an effect to automatically scroll to the edit form if edit=true
+    useEffect(() => {
+        if (shouldShowEditForm && canUpdateRequest() && !loading) {
+            // Scroll to the edit form
+            const editForm = document.getElementById('edit-request-form');
+            if (editForm) {
+                editForm.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    }, [shouldShowEditForm, loading, currentUser]);
+
     const fetchRequestDetails = () => {
         setLoading(true);
+        setError(null);
+
         RequestService.getRequestById(id)
             .then((response) => {
-                setRequest(response.data);
+                const requestData = response.data;
+                setRequest(requestData);
 
-                // Pre-fill form fields if data exists
-                if (response.data.dateTraitement) {
-                    setDateTraitement(new Date(response.data.dateTraitement));
+                // Set all form fields from request data
+                if (requestData.dateTraitement) {
+                    setDateTraitement(new Date(requestData.dateTraitement));
                 }
-                if (response.data.etat) {
-                    setEtat(response.data.etat);
-                }
-                setIfValue(response.data.ifValue || "");
-                setSecteur(response.data.secteur || "");
-                setMotifRejet(response.data.motifRejet || "");
-                setTp(response.data.tp || "");
-                setEmail(response.data.email || "");
-                setGsm(response.data.gsm || "");
-                setFix(response.data.fix || "");
-                setRemarque(response.data.remarque || "");
+                setEtat(requestData.etat || "NOUVEAU");
+                setIfValue(requestData.ifValue || "");
+                setSecteur(requestData.secteur || "");
+                setMotifRejet(requestData.motifRejet || "");
+                setTp(requestData.tp || "");
+                setEmail(requestData.email || "");
+                setGsm(requestData.gsm || "");
+                setFix(requestData.fix || "");
+                setRemarque(requestData.remarque || "");
+                setCin(requestData.cin || "");
+                setIce(requestData.ice || "");
+
+                // Set additional editable fields
+                setRaisonSocialeNomsPrenom(requestData.raisonSocialeNomsPrenom || "");
+                setPmPp(requestData.pmPp || "PP");
+                setObjet(requestData.objet || "");
 
                 setError(null);
             })
@@ -86,7 +143,10 @@ function RequestDetail() {
     };
 
     const handleUpdateRequest = (e) => {
-        e.preventDefault();
+        if (e) {
+            e.preventDefault();
+        }
+
         setUpdatingRequest(true);
         setError(null);
         setSuccess(null);
@@ -104,17 +164,28 @@ function RequestDetail() {
             email,
             gsm,
             fix,
-            remarque
+            remarque,
+            cin,
+            ice,
+            // Add the additional fields
+            raisonSocialeNomsPrenom,
+            pmPp,
+            objet
         };
+
+        console.log("Sending update request with data:", requestUpdateData);
 
         RequestService.updateRequest(id, requestUpdateData)
             .then((response) => {
+                console.log("Update successful, response:", response);
                 setSuccess("Demande mise à jour avec succès !");
                 setRequest(response.data);
                 setUpdatingRequest(false);
 
-                // Update the navigate target from track-request to requests
-                navigate("/requests");
+                // Instead of immediately navigating away, show the success message first
+                setTimeout(() => {
+                    navigate("/requests");
+                }, 1000);
             })
             .catch((error) => {
                 console.error("Error updating request:", error);
@@ -122,11 +193,22 @@ function RequestDetail() {
                     error.response?.data?.message ||
                     "Échec de la mise à jour de la demande. Veuillez réessayer."
                 );
+                setUpdatingRequest(false);
             });
     };
 
     const canUpdateRequest = () => {
         return currentUser && (currentUser.role === "ROLE_PROCESSING" || currentUser.role === "ROLE_MANAGER");
+    };
+
+    // Add a new function to check if the current user is a frontdesk agent who can edit this request
+    const isFrontdeskWithEditRights = () => {
+        return currentUser &&
+            currentUser.role === "ROLE_FRONTDESK" &&
+            canEdit &&
+            request &&
+            currentUser.id === request.creatorId &&
+            timeLeftToEdit > 0;
     };
 
     const formatDate = (dateString) => {
@@ -162,7 +244,7 @@ function RequestDetail() {
     return (
         <Container maxWidth="lg" sx={{ mt: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom>
-                Détails de la Demande - ID: {id}
+                {shouldShowEditForm ? "Modifier la Demande - ID: " : "Détails de la Demande - ID: "}{id}
             </Typography>
 
             {success && (
@@ -173,89 +255,252 @@ function RequestDetail() {
 
             {request && (
                 <Paper sx={{ p: 4, mb: 4 }}>
-                    <Typography variant="h6" gutterBottom>
-                        Informations de Base
-                    </Typography>
-
-                    <Grid container spacing={3} sx={{ mb: 4 }}>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="subtitle2" color="text.secondary">
-                                Date d'Entrée
-                            </Typography>
-                            <Typography variant="body1">
-                                {formatDate(request.dateEntree)}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="subtitle2" color="text.secondary">
-                                Type
-                            </Typography>
-                            <Typography variant="body1">
-                                {request.pmPp === "PM" ? "Personne Morale" : "Personne Physique"}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="subtitle2" color="text.secondary">
-                                Identifiant
-                            </Typography>
-                            <Typography variant="body1">
-                                {request.cin && <span>CIN: {request.cin}</span>}
-                                {!request.cin && request.ifValue && <span>IF: {request.ifValue}</span>}
-                                {!request.cin && !request.ifValue && <span>N/A</span>}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Typography variant="subtitle2" color="text.secondary">
-                                Statut
-                            </Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                                {request.etat || "NOUVEAU"}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Typography variant="subtitle2" color="text.secondary">
-                                Nom/Entreprise
-                            </Typography>
-                            <Typography variant="body1">
-                                {request.raisonSocialeNomsPrenom}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <Typography variant="subtitle2" color="text.secondary">
-                                Objet
-                            </Typography>
-                            <Typography variant="body1">
-                                {request.objet || "N/A"}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <Typography variant="subtitle2" color="text.secondary">
-                                Créé Par
-                            </Typography>
-                            <Typography variant="body1">
-                                {request.creatorUsername || "N/A"}
-                            </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                            <Typography variant="subtitle2" color="text.secondary">
-                                Traité Par
-                            </Typography>
-                            <Typography variant="body1">
-                                {request.agentUsername || "Pas encore traité"}
-                            </Typography>
-                        </Grid>
-                    </Grid>
-
-                    {canUpdateRequest() && (
+                    {/* Show the information table only when not in edit mode */}
+                    {!shouldShowEditForm && (
                         <>
-                            <Divider sx={{ my: 3 }} />
-
                             <Typography variant="h6" gutterBottom>
+                                Informations Complètes de la Demande
+                            </Typography>
+
+                            <TableContainer component={Paper} variant="outlined" sx={{ mb: 4 }}>
+                                <Table aria-label="detailed request information">
+                                    <TableBody>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold', width: '25%' }}>
+                                                ID
+                                            </TableCell>
+                                            <TableCell>{request.id}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Date d'Entrée
+                                            </TableCell>
+                                            <TableCell>{formatDate(request.dateEntree)}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Nom/Entreprise
+                                            </TableCell>
+                                            <TableCell>{request.raisonSocialeNomsPrenom}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Type
+                                            </TableCell>
+                                            <TableCell>{request.pmPp === "PM" ? "Personne Morale" : "Personne Physique"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                CIN
+                                            </TableCell>
+                                            <TableCell>{request.cin || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                IF
+                                            </TableCell>
+                                            <TableCell>{request.ifValue || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                ICE
+                                            </TableCell>
+                                            <TableCell>{request.ice || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                TP
+                                            </TableCell>
+                                            <TableCell>{request.tp || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Secteur
+                                            </TableCell>
+                                            <TableCell>{request.secteur || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                GSM
+                                            </TableCell>
+                                            <TableCell>{request.gsm || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Téléphone Fixe
+                                            </TableCell>
+                                            <TableCell>{request.fix || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Email
+                                            </TableCell>
+                                            <TableCell>{request.email || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Objet
+                                            </TableCell>
+                                            <TableCell>{request.objet || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Remarque
+                                            </TableCell>
+                                            <TableCell>{request.remarque || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Statut
+                                            </TableCell>
+                                            <TableCell><strong>{request.etat || "NOUVEAU"}</strong></TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Motif de Rejet
+                                            </TableCell>
+                                            <TableCell>{request.motifRejet || "N/A"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Date de Traitement
+                                            </TableCell>
+                                            <TableCell>{formatDate(request.dateTraitement) || "Pas encore traité"}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Créé Le
+                                            </TableCell>
+                                            <TableCell>{formatDate(request.createdAt)}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Mis à jour Le
+                                            </TableCell>
+                                            <TableCell>{formatDate(request.updatedAt)}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Créé Par
+                                            </TableCell>
+                                            <TableCell>{request.creatorUsername || "N/A"} (ID: {request.creatorId})</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row" sx={{ fontWeight: 'bold' }}>
+                                                Traité Par
+                                            </TableCell>
+                                            <TableCell>{request.agentUsername || "Pas encore traité"} {request.agentId ? `(ID: ${request.agentId})` : ''}</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+
+                            {/* Navigation button for view mode */}
+                            <Box sx={{ mt: 3, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                {canEdit && (
+                                    <>
+                                        {timeLeftToEdit > 0 && currentUser?.role === "ROLE_FRONTDESK" && (
+                                            <Alert severity="info" sx={{ mb: 2, width: "100%" }}>
+                                                Il vous reste {timeLeftToEdit} minute{timeLeftToEdit !== 1 ? 's' : ''} pour modifier cette demande
+                                            </Alert>
+                                        )}
+                                        {/* For processing/manager, navigate to edit within this page */}
+                                        {canUpdateRequest() && (
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                onClick={() => navigate(`/requests/${id}?edit=true`)}
+                                                sx={{ mb: 2, width: "220px" }}
+                                            >
+                                                Modifier la Demande
+                                            </Button>
+                                        )}
+                                        {/* For frontdesk agents, navigate to edit-request page */}
+                                        {isFrontdeskWithEditRights() && (
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                onClick={() => navigate(`/edit-request/${id}`)}
+                                                sx={{ mb: 2, width: "220px" }}
+                                            >
+                                                Modifier la Demande
+                                            </Button>
+                                        )}
+                                    </>
+                                )}
+                                <Button
+                                    variant="contained"
+                                    onClick={() => navigate("/requests")}
+                                    sx={{ width: "220px" }}
+                                >
+                                    Retour aux Demandes
+                                </Button>
+                            </Box>
+                        </>
+                    )}
+
+                    {/* Show the edit form only when in edit mode and user has permission */}
+                    {shouldShowEditForm && canUpdateRequest() && (
+                        <>
+                            <Typography variant="h6" gutterBottom id="edit-request-form">
                                 Mettre à Jour la Demande
                             </Typography>
 
                             <Box component="form" onSubmit={handleUpdateRequest}>
                                 <Grid container spacing={3}>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="ID"
+                                            value={id}
+                                            disabled
+                                            InputProps={{
+                                                readOnly: true,
+                                            }}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Date d'Entrée"
+                                            value={formatDate(request.dateEntree)}
+                                            disabled
+                                            InputProps={{
+                                                readOnly: true,
+                                            }}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <TextField
+                                            fullWidth
+                                            label="Nom/Entreprise"
+                                            value={raisonSocialeNomsPrenom}
+                                            onChange={(e) => setRaisonSocialeNomsPrenom(e.target.value)}
+                                            required
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <FormControl fullWidth>
+                                            <InputLabel>Type</InputLabel>
+                                            <Select
+                                                value={pmPp}
+                                                label="Type"
+                                                onChange={(e) => setPmPp(e.target.value)}
+                                            >
+                                                <MenuItem value="PP">Personne Physique</MenuItem>
+                                                <MenuItem value="PM">Personne Morale</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Objet"
+                                            value={objet}
+                                            onChange={(e) => setObjet(e.target.value)}
+                                            required
+                                        />
+                                    </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <LocalizationProvider dateAdapter={AdapterDateFns}>
                                             <DatePicker
@@ -268,7 +513,6 @@ function RequestDetail() {
                                             />
                                         </LocalizationProvider>
                                     </Grid>
-
                                     <Grid item xs={12} sm={6}>
                                         <FormControl fullWidth>
                                             <InputLabel>Statut</InputLabel>
@@ -277,14 +521,21 @@ function RequestDetail() {
                                                 label="Statut"
                                                 onChange={(e) => setEtat(e.target.value)}
                                             >
-                                                <MenuItem value="NOUVEAU">NOUVEAU</MenuItem>
                                                 <MenuItem value="EN_TRAITEMENT">EN TRAITEMENT</MenuItem>
                                                 <MenuItem value="TRAITE">TRAITÉ</MenuItem>
                                                 <MenuItem value="REJETE">REJETÉ</MenuItem>
                                             </Select>
                                         </FormControl>
                                     </Grid>
-
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="CIN"
+                                            value={cin || ""}
+                                            onChange={(e) => setCin(e.target.value)}
+                                            helperText="Carte d'identité nationale"
+                                        />
+                                    </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <TextField
                                             fullWidth
@@ -294,7 +545,23 @@ function RequestDetail() {
                                             helperText="Numéro d'identification fiscale (IF)"
                                         />
                                     </Grid>
-
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="ICE"
+                                            value={ice || ""}
+                                            onChange={(e) => setIce(e.target.value)}
+                                            helperText="Identifiant Commun de l'Entreprise"
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="TP"
+                                            value={tp}
+                                            onChange={(e) => setTp(e.target.value)}
+                                        />
+                                    </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <TextField
                                             fullWidth
@@ -303,7 +570,30 @@ function RequestDetail() {
                                             onChange={(e) => setSecteur(e.target.value)}
                                         />
                                     </Grid>
-
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="GSM"
+                                            value={gsm}
+                                            onChange={(e) => setGsm(e.target.value)}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Téléphone Fixe"
+                                            value={fix}
+                                            onChange={(e) => setFix(e.target.value)}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <TextField
+                                            fullWidth
+                                            label="Email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                        />
+                                    </Grid>
                                     <Grid item xs={12}>
                                         <TextField
                                             fullWidth
@@ -314,43 +604,6 @@ function RequestDetail() {
                                             rows={2}
                                         />
                                     </Grid>
-
-                                    <Grid item xs={12} sm={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="TP"
-                                            value={tp}
-                                            onChange={(e) => setTp(e.target.value)}
-                                        />
-                                    </Grid>
-
-                                    <Grid item xs={12} sm={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="Email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                        />
-                                    </Grid>
-
-                                    <Grid item xs={12} sm={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="GSM"
-                                            value={gsm}
-                                            onChange={(e) => setGsm(e.target.value)}
-                                        />
-                                    </Grid>
-
-                                    <Grid item xs={12} sm={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="Téléphone Fixe"
-                                            value={fix}
-                                            onChange={(e) => setFix(e.target.value)}
-                                        />
-                                    </Grid>
-
                                     <Grid item xs={12}>
                                         <TextField
                                             fullWidth
@@ -361,35 +614,57 @@ function RequestDetail() {
                                             rows={3}
                                         />
                                     </Grid>
-
-                                    <Grid item xs={12}>
-                                        <Button
-                                            type="submit"
-                                            variant="contained"
-                                            color="primary"
-                                            disabled={updatingRequest}
-                                        >
-                                            {updatingRequest ? "Mise à jour..." : "Mettre à Jour"}
-                                        </Button>
-                                        <Button
-                                            variant="outlined"
-                                            sx={{ mr: 2 }}
-                                            onClick={() => navigate("/requests")}
-                                        >
-                                            Retour aux Demandes
-                                        </Button>
-                                    </Grid>
                                 </Grid>
+                                <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-start", gap: 2 }}>
+                                    <Button
+                                        type="submit"
+                                        variant="contained"
+                                        color="primary"
+                                        disabled={updatingRequest}
+                                    >
+                                        {updatingRequest ? "Mise à jour..." : "Mettre à Jour"}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outlined"
+                                        onClick={() => navigate(`/requests/${id}`)}
+                                    >
+                                        Voir les Détails
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outlined"
+                                        onClick={() => navigate("/requests")}
+                                    >
+                                        Retour aux Demandes
+                                    </Button>
+                                </Box>
                             </Box>
                         </>
                     )}
 
-                    {!canUpdateRequest() && (
-                        <Box sx={{ mt: 3, textAlign: "center" }}>
-                            <Button variant="contained" onClick={() => navigate("/requests")}>
-                                Retour aux Demandes
-                            </Button>
-                        </Box>
+                    {/* Show not authorized message if trying to edit without permission */}
+                    {shouldShowEditForm && !canUpdateRequest() && (
+                        <>
+                            <Alert severity="warning" sx={{ mb: 3 }}>
+                                Vous n'êtes pas autorisé à modifier cette demande.
+                            </Alert>
+                            <Box sx={{ mt: 3, textAlign: "center" }}>
+                                <Button
+                                    variant="contained"
+                                    onClick={() => navigate(`/requests/${id}`)}
+                                    sx={{ mr: 2 }}
+                                >
+                                    Voir les Détails
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => navigate("/requests")}
+                                >
+                                    Retour aux Demandes
+                                </Button>
+                            </Box>
+                        </>
                     )}
                 </Paper>
             )}
