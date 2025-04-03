@@ -28,7 +28,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
 import org.springframework.lang.NonNull;
 
 import java.util.Arrays;
@@ -79,11 +78,11 @@ public class WebSecurityConfig implements WebMvcConfigurer {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // Add security headers
                 .headers(headers -> {
-                    headers.frameOptions().deny();
-                    headers.contentSecurityPolicy(
-                            "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'");
-                    headers.xssProtection();
-                    headers.httpStrictTransportSecurity().includeSubDomains(true).maxAgeInSeconds(31536000);
+                    headers.frameOptions(frameOptions -> frameOptions.deny());
+                    headers.contentSecurityPolicy(contentSecurityPolicy -> contentSecurityPolicy.policyDirectives(
+                            "default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'"));
+                    headers.xssProtection(xss -> xss.disable());
+                    headers.httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000));
                 })
                 .authorizeHttpRequests(auth -> {
                     System.out.println("DEBUG: Setting request authorization rules");
