@@ -4,13 +4,12 @@ import AuthService from './auth.service';
 
 // Default API URL
 const getServerUrl = () => {
-    // Production environment - use relative paths to let nginx handle the proxy
+    // In production, use empty base URL to route through nginx
     if (process.env.NODE_ENV === 'production') {
-        return '';  // Empty base URL to use relative paths
+        return '';  // Empty means relative URLs
     }
 
     // Development environment - use localhost with backend port
-    // Use env var if available, otherwise default to 8080
     const backendPort = process.env.REACT_APP_BACKEND_PORT || '8080';
     return `http://localhost:${backendPort}`;
 };
@@ -26,13 +25,21 @@ const setupAxios = () => {
     // Request interceptor for adding auth headers and logging
     axios.interceptors.request.use(
         (config) => {
-            // Add timestamp to querystring to prevent caching (especially for IE)
+            // Add timestamp to prevent caching
             const separator = config.url.indexOf('?') === -1 ? '?' : '&';
             config.url = `${config.url}${separator}_ts=${new Date().getTime()}`;
 
-            // Ensure API requests have the correct baseURL - but don't modify relative URLs in production
-            if (config.url && config.url.startsWith('/api/') && process.env.NODE_ENV !== 'production') {
-                config.baseURL = baseURL;
+            // In production we want relative URLs to go through the nginx proxy
+            if (process.env.NODE_ENV === 'production') {
+                // Remove any baseURL setting for API paths
+                if (config.url && config.url.startsWith('/api/')) {
+                    delete config.baseURL;
+                }
+            } else {
+                // In development, ensure API requests have the correct baseURL
+                if (config.url && config.url.startsWith('/api/')) {
+                    config.baseURL = baseURL;
+                }
             }
 
             return config;
