@@ -4,9 +4,9 @@ import AuthService from './auth.service';
 
 // Default API URL
 const getServerUrl = () => {
-    // Production environment
+    // Production environment - use relative paths to let nginx handle the proxy
     if (process.env.NODE_ENV === 'production') {
-        return '';  // In production, use relative path for same-origin API
+        return '';  // Empty base URL to use relative paths
     }
 
     // Development environment - use localhost with backend port
@@ -30,8 +30,8 @@ const setupAxios = () => {
             const separator = config.url.indexOf('?') === -1 ? '?' : '&';
             config.url = `${config.url}${separator}_ts=${new Date().getTime()}`;
 
-            // Ensure API requests have the correct baseURL
-            if (config.url && config.url.startsWith('/api/')) {
+            // Ensure API requests have the correct baseURL - but don't modify relative URLs in production
+            if (config.url && config.url.startsWith('/api/') && process.env.NODE_ENV !== 'production') {
                 config.baseURL = baseURL;
             }
 
