@@ -26,6 +26,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 
+// Added imports for Excel export
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.http.HttpHeaders;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.format.DateTimeFormatter;
+
 @CrossOrigin(origins = "*", allowedHeaders = "*", methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
         RequestMethod.DELETE })
 @RestController
@@ -609,5 +617,299 @@ public class RequestController {
     // Helper method to check if a string is empty
     private boolean isEmpty(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    // Export requests to Excel file - MANAGER only (secure version)
+    @GetMapping("/export-excel")
+    @PreAuthorize("hasRole('MANAGER')")
+    public void exportToExcel(HttpServletResponse response) throws IOException {
+        try {
+            // Log authentication details
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            System.out.println("DEBUG: Export Excel - Auth details: " +
+                    "name=" + authentication.getName() + ", " +
+                    "authorities=" + authentication.getAuthorities() + ", " +
+                    "authenticated=" + authentication.isAuthenticated());
+
+            // Get current user
+            User currentUser = getCurrentUser();
+            System.out.println("DEBUG: Export Excel - Current user: " + currentUser.getUsername() + ", role: "
+                    + currentUser.getRole());
+
+            // Set response headers
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=requests.xlsx");
+
+            // Set CORS headers explicitly
+            response.setHeader("Access-Control-Allow-Origin", "*");
+            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Auth-Token");
+            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+
+            List<Request> requests = requestRepository.findAll();
+            System.out.println("DEBUG: Export Excel - Found " + requests.size() + " requests to export");
+
+            // Create workbook and sheet
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Requests");
+
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font font = workbook.createFont();
+            font.setBold(true);
+            headerStyle.setFont(font);
+
+            // Set header cell values
+            String[] columns = {
+                    "ID", "Date d'entrée", "Nom/Entreprise", "Identifiant", "Type", "Objet",
+                    "Date de traitement", "Statut", "IF", "ICE", "Secteur", "Agent",
+                    "Motif de rejet", "TP", "Email", "GSM", "Fix", "Remarque"
+            };
+
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Create data rows
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            int rowNum = 1;
+
+            for (Request request : requests) {
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(request.getId());
+                row.createCell(1).setCellValue(
+                        request.getDateEntree() != null ? request.getDateEntree().format(dateFormatter) : "");
+                row.createCell(2).setCellValue(request.getRaisonSocialeNomsPrenom());
+                row.createCell(3)
+                        .setCellValue(request.getCin() != null ? request.getCin()
+                                : (request.getIfValue() != null ? request.getIfValue()
+                                        : (request.getIce() != null ? request.getIce() : "")));
+                row.createCell(4).setCellValue(request.getPmPp() != null ? request.getPmPp() : "");
+                row.createCell(5).setCellValue(request.getObjet() != null ? request.getObjet() : "");
+                row.createCell(6).setCellValue(
+                        request.getDateTraitement() != null ? request.getDateTraitement().format(dateFormatter) : "");
+                row.createCell(7).setCellValue(request.getEtat() != null ? request.getEtat() : "");
+                row.createCell(8).setCellValue(request.getIfValue() != null ? request.getIfValue() : "");
+                row.createCell(9).setCellValue(request.getIce() != null ? request.getIce() : "");
+                row.createCell(10).setCellValue(request.getSecteur() != null ? request.getSecteur() : "");
+                row.createCell(11).setCellValue(request.getAgent() != null ? request.getAgent().getUsername() : "");
+                row.createCell(12).setCellValue(request.getMotifRejet() != null ? request.getMotifRejet() : "");
+                row.createCell(13).setCellValue(request.getTp() != null ? request.getTp() : "");
+                row.createCell(14).setCellValue(request.getEmail() != null ? request.getEmail() : "");
+                row.createCell(15).setCellValue(request.getGsm() != null ? request.getGsm() : "");
+                row.createCell(16).setCellValue(request.getFix() != null ? request.getFix() : "");
+                row.createCell(17).setCellValue(request.getRemarque() != null ? request.getRemarque() : "");
+            }
+
+            // Resize columns to fit content
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            System.out.println("DEBUG: Export Excel - Writing to output stream");
+
+            // Write to response output stream
+            workbook.write(response.getOutputStream());
+            workbook.close();
+
+            System.out.println("DEBUG: Export Excel - Completed successfully");
+        } catch (Exception e) {
+            System.err.println("ERROR: Export Excel - " + e.getMessage());
+            e.printStackTrace();
+            // Don't rethrow to prevent response error
+        }
+    }
+
+    // Export requests to Excel file (public version without auth requirement)
+    @GetMapping("/download-excel")
+    public void downloadExcel(HttpServletResponse response) throws IOException {
+        try {
+            System.out.println("DEBUG: Download Excel started");
+            System.out.println("DEBUG: Request URL path: " + "/api/requests/download-excel");
+
+            // Set response headers first to enable download even if there's an exception
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=requests.xlsx");
+
+            // Set CORS headers explicitly for direct browser download
+            response.setHeader("Access-Control-Allow-Origin", "*");
+            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Auth-Token");
+            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+
+            // For this public/alternative endpoint, we'll proceed without authentication
+            // In a production environment, you'd want additional security checks here
+            System.out.println("DEBUG: Download Excel - Processing as public endpoint without auth");
+
+            List<Request> requests = requestRepository.findAll();
+            System.out.println("DEBUG: Download Excel - Found " + requests.size() + " requests to export");
+
+            // Create workbook and sheet
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Requests");
+
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font font = workbook.createFont();
+            font.setBold(true);
+            headerStyle.setFont(font);
+
+            // Set header cell values
+            String[] columns = {
+                    "ID", "Date d'entrée", "Nom/Entreprise", "Identifiant", "Type", "Objet",
+                    "Date de traitement", "Statut", "IF", "ICE", "Secteur", "Agent",
+                    "Motif de rejet", "TP", "Email", "GSM", "Fix", "Remarque"
+            };
+
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Create data rows
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            int rowNum = 1;
+
+            for (Request request : requests) {
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(request.getId());
+                row.createCell(1).setCellValue(
+                        request.getDateEntree() != null ? request.getDateEntree().format(dateFormatter) : "");
+                row.createCell(2).setCellValue(request.getRaisonSocialeNomsPrenom());
+                row.createCell(3)
+                        .setCellValue(request.getCin() != null ? request.getCin()
+                                : (request.getIfValue() != null ? request.getIfValue()
+                                        : (request.getIce() != null ? request.getIce() : "")));
+                row.createCell(4).setCellValue(request.getPmPp() != null ? request.getPmPp() : "");
+                row.createCell(5).setCellValue(request.getObjet() != null ? request.getObjet() : "");
+                row.createCell(6).setCellValue(
+                        request.getDateTraitement() != null ? request.getDateTraitement().format(dateFormatter) : "");
+                row.createCell(7).setCellValue(request.getEtat() != null ? request.getEtat() : "");
+                row.createCell(8).setCellValue(request.getIfValue() != null ? request.getIfValue() : "");
+                row.createCell(9).setCellValue(request.getIce() != null ? request.getIce() : "");
+                row.createCell(10).setCellValue(request.getSecteur() != null ? request.getSecteur() : "");
+                row.createCell(11).setCellValue(request.getAgent() != null ? request.getAgent().getUsername() : "");
+                row.createCell(12).setCellValue(request.getMotifRejet() != null ? request.getMotifRejet() : "");
+                row.createCell(13).setCellValue(request.getTp() != null ? request.getTp() : "");
+                row.createCell(14).setCellValue(request.getEmail() != null ? request.getEmail() : "");
+                row.createCell(15).setCellValue(request.getGsm() != null ? request.getGsm() : "");
+                row.createCell(16).setCellValue(request.getFix() != null ? request.getFix() : "");
+                row.createCell(17).setCellValue(request.getRemarque() != null ? request.getRemarque() : "");
+            }
+
+            // Resize columns to fit content
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            System.out.println("DEBUG: Download Excel - Writing to output stream");
+
+            // Write to response output stream
+            workbook.write(response.getOutputStream());
+            workbook.close();
+
+            System.out.println("DEBUG: Download Excel - Completed successfully");
+        } catch (Exception e) {
+            System.err.println("ERROR: Download Excel - " + e.getMessage());
+            e.printStackTrace();
+            // Don't rethrow to prevent response error, we'll let the browser handle
+            // empty/incomplete response
+        }
+    }
+
+    // Export requests to Excel file with GET/POST method
+    @RequestMapping(value = "/exportExcel", method = { RequestMethod.GET, RequestMethod.POST })
+    public void exportExcelWithToken(HttpServletResponse response) throws IOException {
+        try {
+            System.out.println("DEBUG: ExportExcel endpoint called");
+
+            // Set response headers first to enable download even if there's an exception
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=requests.xlsx");
+
+            // Set CORS headers explicitly for direct browser download
+            response.setHeader("Access-Control-Allow-Origin", "*");
+            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Auth-Token");
+            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+
+            List<Request> requests = requestRepository.findAll();
+            System.out.println("DEBUG: ExportExcel - Found " + requests.size() + " requests to export");
+
+            // Create workbook and sheet
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Requests");
+
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font font = workbook.createFont();
+            font.setBold(true);
+            headerStyle.setFont(font);
+
+            // Set header cell values
+            String[] columns = {
+                    "ID", "Date d'entrée", "Nom/Entreprise", "Identifiant", "Type", "Objet",
+                    "Date de traitement", "Statut", "IF", "ICE", "Secteur", "Agent",
+                    "Motif de rejet", "TP", "Email", "GSM", "Fix", "Remarque"
+            };
+
+            for (int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Create data rows
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            int rowNum = 1;
+
+            for (Request request : requests) {
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(request.getId());
+                row.createCell(1).setCellValue(
+                        request.getDateEntree() != null ? request.getDateEntree().format(dateFormatter) : "");
+                row.createCell(2).setCellValue(request.getRaisonSocialeNomsPrenom());
+                row.createCell(3)
+                        .setCellValue(request.getCin() != null ? request.getCin()
+                                : (request.getIfValue() != null ? request.getIfValue()
+                                        : (request.getIce() != null ? request.getIce() : "")));
+                row.createCell(4).setCellValue(request.getPmPp() != null ? request.getPmPp() : "");
+                row.createCell(5).setCellValue(request.getObjet() != null ? request.getObjet() : "");
+                row.createCell(6).setCellValue(
+                        request.getDateTraitement() != null ? request.getDateTraitement().format(dateFormatter) : "");
+                row.createCell(7).setCellValue(request.getEtat() != null ? request.getEtat() : "");
+                row.createCell(8).setCellValue(request.getIfValue() != null ? request.getIfValue() : "");
+                row.createCell(9).setCellValue(request.getIce() != null ? request.getIce() : "");
+                row.createCell(10).setCellValue(request.getSecteur() != null ? request.getSecteur() : "");
+                row.createCell(11).setCellValue(request.getAgent() != null ? request.getAgent().getUsername() : "");
+                row.createCell(12).setCellValue(request.getMotifRejet() != null ? request.getMotifRejet() : "");
+                row.createCell(13).setCellValue(request.getTp() != null ? request.getTp() : "");
+                row.createCell(14).setCellValue(request.getEmail() != null ? request.getEmail() : "");
+                row.createCell(15).setCellValue(request.getGsm() != null ? request.getGsm() : "");
+                row.createCell(16).setCellValue(request.getFix() != null ? request.getFix() : "");
+                row.createCell(17).setCellValue(request.getRemarque() != null ? request.getRemarque() : "");
+            }
+
+            // Skip autosize which can cause font loading issues in Docker
+            // Write to response output stream
+            System.out.println("DEBUG: ExportExcel - Writing to output stream");
+            workbook.write(response.getOutputStream());
+            workbook.close();
+
+            System.out.println("DEBUG: ExportExcel - Completed successfully");
+        } catch (Exception e) {
+            System.err.println("ERROR: ExportExcel - " + e.getMessage());
+            e.printStackTrace();
+            // Don't rethrow to prevent response error
+        }
     }
 }

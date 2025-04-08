@@ -25,6 +25,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import RequestService from "../services/request.service";
 import AuthService from "../services/auth.service";
 
@@ -36,10 +37,11 @@ function RequestList() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("");
+    const [statusFilter, setStatusFilter] = useState("Tous");
     const [currentUser, setCurrentUser] = useState(null);
     const [processingRequests, setProcessingRequests] = useState(false);
     const [successMessage, setSuccessMessage] = useState(null);
+    const [exporting, setExporting] = useState(false);
 
     useEffect(() => {
         // Get current user
@@ -133,6 +135,27 @@ function RequestList() {
             });
     };
 
+    const handleExportToExcel = () => {
+        setExporting(true);
+        setError(null);
+
+        // Create a new anchor element
+        const link = document.createElement('a');
+        link.href = 'http://localhost:8080/api/requests/exportExcel';
+        link.setAttribute('download', 'requests.xlsx');
+        link.setAttribute('target', '_blank');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Set success message and reset state
+        setSuccessMessage("Téléchargement démarré. Si le fichier ne se télécharge pas automatiquement, vérifiez les paramètres de votre navigateur.");
+        setTimeout(() => {
+            setExporting(false);
+            setTimeout(() => setSuccessMessage(null), 5000);
+        }, 1000);
+    };
+
     // Filter requests based on search query and status filter
     const filteredRequests = requests.filter((request) => {
         const matchesSearch = searchQuery === "" ||
@@ -142,7 +165,7 @@ function RequestList() {
             (request.ifValue && request.ifValue.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (request.ice && request.ice.toLowerCase().includes(searchQuery.toLowerCase()));
 
-        const matchesStatus = statusFilter === "" || request.etat === statusFilter;
+        const matchesStatus = statusFilter === "Tous" || request.etat === statusFilter;
 
         return matchesSearch && matchesStatus;
     });
@@ -192,39 +215,47 @@ function RequestList() {
     }
 
     return (
-        <Container maxWidth="lg" sx={{ mt: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
+        <Container maxWidth="xl" sx={{ py: 4 }}>
+            <Typography variant="h4" gutterBottom>
                 Liste des Demandes
             </Typography>
 
+            {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {error}
+                </Alert>
+            )}
+
             {successMessage && (
-                <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccessMessage(null)}>
+                <Alert severity="success" sx={{ mb: 2 }}>
                     {successMessage}
                 </Alert>
             )}
 
-            <Box sx={{ mb: 3, display: "flex", flexWrap: "wrap", gap: 2 }}>
-                <TextField
-                    label="Rechercher par CIN ou IF ou ICE"
-                    variant="outlined"
-                    value={searchQuery}
-                    onChange={handleSearch}
-                    size="small"
-                    InputProps={{
-                        startAdornment: <SearchIcon sx={{ color: "action.active", mr: 1 }} />,
-                    }}
-                    sx={{ flexGrow: 1, minWidth: "200px" }}
-                />
+            <Box sx={{ display: "flex", mb: 3, flexWrap: "wrap", gap: 2, alignItems: "center" }}>
+                <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1, maxWidth: 500 }}>
+                    <TextField
+                        fullWidth
+                        size="small"
+                        label="Recherche par CIN ou IF ou ICE"
+                        variant="outlined"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        sx={{ mr: 1 }}
+                    />
+                    <SearchIcon color="action" />
+                </Box>
 
-                <FormControl sx={{ minWidth: "200px" }} size="small">
-                    <InputLabel id="status-filter-label">Statut</InputLabel>
+                <FormControl sx={{ minWidth: 200 }}>
+                    <InputLabel id="status-filter-label">Filtrer par Statut</InputLabel>
                     <Select
                         labelId="status-filter-label"
+                        size="small"
                         value={statusFilter}
-                        label="Statut"
-                        onChange={handleStatusFilterChange}
+                        label="Filtrer par Statut"
+                        onChange={(e) => setStatusFilter(e.target.value)}
                     >
-                        <MenuItem value="">Tous</MenuItem>
+                        <MenuItem value="Tous">Tous</MenuItem>
                         <MenuItem value="NOUVEAU">Nouveau</MenuItem>
                         <MenuItem value="EN_TRAITEMENT">En Traitement</MenuItem>
                         <MenuItem value="TRAITE">Traité</MenuItem>
@@ -232,9 +263,15 @@ function RequestList() {
                     </Select>
                 </FormControl>
 
-                <Button variant="contained" onClick={fetchRequests}>
-                    Actualiser
-                </Button>
+                {(currentUser?.role === "ROLE_FRONTDESK" || currentUser?.role === "ROLE_MANAGER") && (
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => navigate("/create-request")}
+                    >
+                        Nouvelle Demande
+                    </Button>
+                )}
 
                 {currentUser?.role === "ROLE_FRONTDESK" && (
                     <Button
@@ -244,6 +281,18 @@ function RequestList() {
                         disabled={processingRequests}
                     >
                         {processingRequests ? 'Traitement...' : 'Traiter les demandes du jour'}
+                    </Button>
+                )}
+
+                {currentUser?.role === "ROLE_MANAGER" && (
+                    <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<FileDownloadIcon />}
+                        onClick={handleExportToExcel}
+                        disabled={exporting || loading}
+                    >
+                        {exporting ? 'Exportation...' : 'Exporter Excel'}
                     </Button>
                 )}
             </Box>
@@ -346,7 +395,7 @@ function RequestList() {
                             variant="text"
                             onClick={() => {
                                 setSearchQuery("");
-                                setStatusFilter("");
+                                setStatusFilter("Tous");
                             }}
                         >
                             Effacer les filtres

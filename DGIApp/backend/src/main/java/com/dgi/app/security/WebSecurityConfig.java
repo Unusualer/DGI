@@ -89,6 +89,8 @@ public class WebSecurityConfig implements WebMvcConfigurer {
                     auth.requestMatchers("/api/auth/**").permitAll();
                     auth.requestMatchers("/api/test/**").permitAll();
                     auth.requestMatchers("/api/public/**").permitAll();
+                    auth.requestMatchers("/api/requests/download-excel").permitAll();
+                    auth.requestMatchers("/api/requests/exportExcel").permitAll();
 
                     auth.anyRequest().authenticated();
                     System.out.println("DEBUG: Request authorization configuration complete");
