@@ -20,13 +20,16 @@ import {
     TableCell,
     TableContainer,
     TableHead,
-    TableRow
+    TableRow,
+    IconButton,
+    Tooltip
 } from "@mui/material";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import RequestService from "../services/request.service";
 import AuthService from "../services/auth.service";
+import PrintIcon from '@mui/icons-material/Print';
 
 function RequestDetail() {
     const { id } = useParams();
@@ -62,6 +65,8 @@ function RequestDetail() {
 
     // Check if we have an edit query parameter
     const shouldShowEditForm = new URLSearchParams(location.search).get('edit') === 'true';
+
+    const [printingReceipt, setPrintingReceipt] = useState(false);
 
     useEffect(() => {
         const user = AuthService.getCurrentUser();
@@ -217,6 +222,24 @@ function RequestDetail() {
         return date.toLocaleDateString();
     };
 
+    // Function to handle printing the receipt
+    const handlePrintReceipt = () => {
+        if (!request || !request.id) return;
+
+        setPrintingReceipt(true);
+        RequestService.printReceipt(request.id)
+            .then(() => {
+                setSuccess("Reçu généré avec succès");
+            })
+            .catch(err => {
+                console.error("Error printing receipt:", err);
+                setError("Erreur lors de la génération du reçu: " + (err.message || "Erreur inconnue"));
+            })
+            .finally(() => {
+                setPrintingReceipt(false);
+            });
+    };
+
     if (loading) {
         return (
             <Container maxWidth="lg" sx={{ mt: 4, textAlign: "center" }}>
@@ -258,9 +281,20 @@ function RequestDetail() {
                     {/* Show the information table only when not in edit mode */}
                     {!shouldShowEditForm && (
                         <>
-                            <Typography variant="h6" gutterBottom>
-                                Informations Complètes de la Demande
-                            </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="h6" gutterBottom>
+                                    Informations Complètes de la Demande
+                                </Typography>
+                                <Tooltip title="Imprimer le reçu">
+                                    <IconButton
+                                        color="primary"
+                                        onClick={handlePrintReceipt}
+                                        disabled={printingReceipt}
+                                    >
+                                        {printingReceipt ? <CircularProgress size={24} /> : <PrintIcon />}
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
 
                             <TableContainer component={Paper} variant="outlined" sx={{ mb: 4 }}>
                                 <Table aria-label="detailed request information">

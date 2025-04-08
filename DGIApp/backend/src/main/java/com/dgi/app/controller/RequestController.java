@@ -12,6 +12,7 @@ import com.dgi.app.security.services.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -33,6 +34,7 @@ import org.springframework.http.HttpHeaders;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
+import com.dgi.app.service.PdfService;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*", methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
         RequestMethod.DELETE })
@@ -44,6 +46,9 @@ public class RequestController {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    PdfService pdfService;
 
     // Helper to get current authenticated user
     private User getCurrentUser() {
@@ -910,6 +915,31 @@ public class RequestController {
             System.err.println("ERROR: ExportExcel - " + e.getMessage());
             e.printStackTrace();
             // Don't rethrow to prevent response error
+        }
+    }
+
+    // Endpoint to generate and download a receipt PDF
+    @GetMapping("/{id}/receipt")
+    @PreAuthorize("hasAnyAuthority('ROLE_FRONTDESK', 'ROLE_MANAGER', 'ROLE_PROCESSING')")
+    public ResponseEntity<byte[]> generateReceipt(@PathVariable Long id, HttpServletResponse response) {
+        try {
+            Optional<Request> requestOpt = requestRepository.findById(id);
+            if (!requestOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Request request = requestOpt.get();
+            byte[] pdfContent = pdfService.generateRequestReceipt(request);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "recu_demande_" + id + ".pdf");
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+
+            return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

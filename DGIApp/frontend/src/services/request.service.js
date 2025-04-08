@@ -255,6 +255,37 @@ const bulkUpdateTodayRequests = () => {
     });
 };
 
+// Generate and download a receipt PDF for a request
+const printReceipt = (id) => {
+    return axios({
+        method: 'get',
+        url: API_URL + id + '/receipt',
+        baseURL: getServerUrl(),
+        headers: authHeader(),
+        responseType: 'blob'
+    })
+        .then(response => {
+            // Create a blob from the PDF data
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+
+            // Create a link element to download the PDF
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `recu_demande_${id}.pdf`);
+
+            // Append to the document, click it, and remove it
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Clean up the URL object
+            window.URL.revokeObjectURL(url);
+
+            return response;
+        });
+};
+
 // Export the service
 const RequestService = {
     createRequest,
@@ -269,7 +300,8 @@ const RequestService = {
     searchRequestsByCin,
     getRequestById,
     deleteRequest,
-    bulkUpdateTodayRequests
+    bulkUpdateTodayRequests,
+    printReceipt
 };
 
 export default RequestService; 

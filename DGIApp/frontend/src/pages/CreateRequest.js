@@ -13,12 +13,16 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    FormHelperText
+    FormHelperText,
+    IconButton,
+    Tooltip,
+    CircularProgress
 } from "@mui/material";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import RequestService from "../services/request.service";
+import PrintIcon from '@mui/icons-material/Print';
 
 function CreateRequest() {
     const navigate = useNavigate();
@@ -34,6 +38,8 @@ function CreateRequest() {
     const [success, setSuccess] = useState(null);
     const [submitted, setSubmitted] = useState(false);
     const [message, setMessage] = useState("");
+    const [requestId, setRequestId] = useState(null);
+    const [printingReceipt, setPrintingReceipt] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -86,6 +92,7 @@ function CreateRequest() {
             const responseData = response.data;
             const requestId = responseData.id;
 
+            setRequestId(requestId);
             setSuccess(`Demande créée avec succès, ID: ${requestId}`);
 
             // Clear form
@@ -119,6 +126,24 @@ function CreateRequest() {
     // Helper to check if at least one identifier is provided
     const hasIdentifier = () => cin || ifValue || ice;
 
+    // Function to handle printing the receipt
+    const handlePrintReceipt = () => {
+        if (!requestId) return;
+
+        setPrintingReceipt(true);
+        RequestService.printReceipt(requestId)
+            .then(() => {
+                setMessage("Reçu généré avec succès");
+            })
+            .catch(err => {
+                console.error("Error printing receipt:", err);
+                setError("Erreur lors de la génération du reçu: " + (err.message || "Erreur inconnue"));
+            })
+            .finally(() => {
+                setPrintingReceipt(false);
+            });
+    };
+
     return (
         <Container maxWidth="md" sx={{ mt: 4 }}>
             <Typography variant="h4" component="h1" gutterBottom>
@@ -133,9 +158,22 @@ function CreateRequest() {
                 )}
 
                 {success && (
-                    <Alert severity="success" sx={{ mb: 3 }}>
-                        {success}
-                    </Alert>
+                    <Box sx={{ mb: 3 }}>
+                        <Alert severity="success" sx={{ mb: 1 }}>
+                            {success}
+                        </Alert>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                            <Tooltip title="Imprimer le reçu">
+                                <IconButton
+                                    color="primary"
+                                    onClick={handlePrintReceipt}
+                                    disabled={printingReceipt}
+                                >
+                                    {printingReceipt ? <CircularProgress size={24} /> : <PrintIcon />}
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    </Box>
                 )}
 
                 <Box component="form" onSubmit={handleSubmit}>
