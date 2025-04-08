@@ -10,8 +10,6 @@ import {
     Paper,
     CircularProgress,
 } from "@mui/material";
-import axios from "axios";
-import { getServerUrl } from "../services/axios-config";
 import AuthService from "../services/auth.service";
 
 function Login() {
@@ -35,25 +33,8 @@ function Login() {
         setLoading(true);
 
         try {
-            // Direct login without abstractions to debug the issue
-            const loginUrl = `${getServerUrl()}/api/auth/signin`;
-            console.log("Attempting login to:", loginUrl);
-
-            const response = await axios.post(loginUrl, {
-                username,
-                password,
-            });
-
-            console.log("Login response:", response.data);
-
-            if (response.data.accessToken) {
-                localStorage.setItem("user", JSON.stringify(response.data));
-                axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.accessToken}`;
-                window.dispatchEvent(new Event('auth-change'));
-                navigate("/");
-            } else {
-                setMessage("Login successful but no token received");
-            }
+            await AuthService.login(username, password);
+            navigate("/");
         } catch (error) {
             console.error("Login error:", error);
 

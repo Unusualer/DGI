@@ -2,37 +2,25 @@ import axios from 'axios';
 import authHeader from './auth-header';
 import AuthService from './auth.service';
 
-// Default API URL
-const getServerUrl = () => {
-    // Production environment
-    if (process.env.NODE_ENV === 'production') {
-        return '';  // In production, use relative path for same-origin API
-    }
-
-    // Development environment - use localhost with backend port
-    // Use env var if available, otherwise default to 8080
-    const backendPort = process.env.REACT_APP_BACKEND_PORT || '8080';
-    return `http://localhost:${backendPort}`;
-};
-
-// Set default base URL
-const baseURL = getServerUrl();
-
 // Configure axios
 const setupAxios = () => {
-    // Set the base URL globally
-    axios.defaults.baseURL = baseURL;
+    // Determine base URL based on hostname
+    if (window.location.hostname !== 'localhost') {
+        // When accessed from external IP, ensure we use the frontend server as proxy
+        axios.defaults.baseURL = `http://${window.location.host}`;
+    }
 
-    // Request interceptor for adding auth headers and logging
+    // Set up request interceptor to handle API requests
     axios.interceptors.request.use(
         (config) => {
-            // Add timestamp to querystring to prevent caching (especially for IE)
+            // Add timestamp to querystring to prevent caching
             const separator = config.url.indexOf('?') === -1 ? '?' : '&';
             config.url = `${config.url}${separator}_ts=${new Date().getTime()}`;
 
-            // Ensure API requests have the correct baseURL
-            if (config.url && config.url.startsWith('/api/')) {
-                config.baseURL = baseURL;
+            // Add auth header if available
+            const token = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).accessToken : null;
+            if (token) {
+                config.headers["Authorization"] = `Bearer ${token}`;
             }
 
             return config;
@@ -58,8 +46,6 @@ const setupAxios = () => {
                 }
             }
 
-            // Handle 401 errors or other special cases here
-
             // Retry only GET requests with 5xx server errors
             const { config } = error;
 
@@ -76,4 +62,4 @@ const setupAxios = () => {
     );
 };
 
-export { getServerUrl, setupAxios }; 
+export { setupAxios }; 

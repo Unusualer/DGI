@@ -1,8 +1,6 @@
 import axios from "axios";
 import authHeader from "./auth-header";
-import { getServerUrl } from "./axios-config";
 
-// API endpoint
 const API_URL = "/api/requests/";
 
 // Helper to log HTTP request details
@@ -12,285 +10,145 @@ const logRequest = (method, url, headers, data) => {
     if (data) console.log(`With data:`, data);
 };
 
-// Create a new request (FRONTDESK, MANAGER)
+// Create a new request
 const createRequest = async (requestData) => {
     try {
-        const headers = authHeader();
-        console.log("Creating request with auth header:", headers.Authorization);
+        const apiUrl = API_URL + 'create-new';
+        console.log(`Creating request at ${apiUrl}`);
 
-        // Get the full API URL, using the create-new endpoint
-        const apiUrl = getServerUrl() + API_URL + 'create-new';
-        console.log("Full request URL:", apiUrl);
+        const response = await axios.post(apiUrl, requestData);
+        console.log("Raw API response:", response);
 
-        // Log request details
-        logRequest('post', apiUrl, {
-            ...headers,
-            'Content-Type': 'application/json'
-        }, requestData);
-
-        // Use fetch API directly for more control
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                ...headers,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        });
-
-        console.log("Response status:", response.status);
-
-        // Check if the response is ok (status 200-299)
-        if (response.ok) {
-            // Parse and return the response JSON
-            const data = await response.json();
-            console.log("Success response data:", data);
-
-            // Return a response format compatible with axios for consistency
-            return { data };
+        // Check if we have the data
+        if (response && response.data) {
+            return response.data;
         } else {
-            // Log error details
-            console.error("Error status:", response.status);
-
-            // If we got a 401/403, try the test endpoint as a fallback
-            if (response.status === 401 || response.status === 403) {
-                console.log("Authorization failed, trying test endpoint as fallback...");
-                return createRequestViaTestEndpoint(requestData);
-            }
-
-            // Otherwise, handle the error normally
-            const errorData = await response.json();
-            console.error("Error response data:", errorData);
-            throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+            throw new Error("Invalid response format from server");
         }
     } catch (error) {
-        console.error("All request attempts failed:", error);
+        console.error("Error creating request:", error);
         throw error;
     }
 };
 
-// Fallback to using the test endpoint which doesn't require authentication
-const createRequestViaTestEndpoint = async (requestData) => {
+// Test endpoint - create a request without auth
+const createRequestTest = async (requestData) => {
     try {
-        console.log("Creating request via test endpoint");
+        const testApiUrl = API_URL + "test";
+        console.log(`Creating test request at ${testApiUrl}`);
 
-        // Get the full test API URL
-        const testApiUrl = getServerUrl() + API_URL + "test";
-        console.log("Test endpoint URL:", testApiUrl);
-
-        // Use fetch API for the test endpoint
-        const response = await fetch(testApiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        });
-
-        console.log("Test endpoint response status:", response.status);
-
-        // Check if the response is ok (status 200-299)
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Test endpoint error response:", errorData);
-            throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
-        }
-
-        // Parse and return the response JSON
-        const data = await response.json();
-        console.log("Test endpoint success response:", data);
-
-        // Return a response format compatible with axios for consistency
-        return { data };
+        const response = await axios.post(testApiUrl, requestData);
+        return response.data;
     } catch (error) {
-        console.error("Error using test endpoint:", error);
+        console.error("Error creating test request:", error);
         throw error;
     }
 };
 
-// Update a request (PROCESSING, MANAGER)
-const updateRequest = (id, requestData) => {
-    const headers = {
-        ...authHeader(),
-        'Content-Type': 'application/json'
-    };
-
-    return axios({
-        method: 'put',
-        url: API_URL + id,
-        baseURL: getServerUrl(),
-        data: requestData,
-        headers: headers
-    });
+// Get all requests (MANAGER role)
+const getAllRequests = async () => {
+    return axios.get(API_URL);
 };
 
-// Edit a request within 15 minutes of creation (FRONTDESK, MANAGER)
-const editRequest = (id, requestData) => {
-    const headers = {
-        ...authHeader(),
-        'Content-Type': 'application/json'
-    };
-
-    return axios({
-        method: 'put',
-        url: API_URL + "edit/" + id,
-        baseURL: getServerUrl(),
-        data: requestData,
-        headers: headers
-    });
+// Get requests created by current user (FRONTDESK role)
+const getMySubmissions = async () => {
+    return axios.get(API_URL + "my-submissions");
 };
 
-// Get all requests (MANAGER)
-const getAllRequests = () => {
-    return axios({
-        method: 'get',
-        url: API_URL,
-        baseURL: getServerUrl(),
-        headers: authHeader()
-    });
+// Get requests processed by current user (PROCESSING or MANAGER role)
+const getMyProcessedRequests = async () => {
+    return axios.get(API_URL + "my-processed");
 };
 
-// Get requests created by current FRONTDESK agent
-const getMySubmissions = () => {
-    return axios({
-        method: 'get',
-        url: API_URL + "my-submissions",
-        baseURL: getServerUrl(),
-        headers: authHeader()
-    });
-};
-
-// Get requests processed by current PROCESSING agent
-const getMyProcessedRequests = () => {
-    return axios({
-        method: 'get',
-        url: API_URL + "my-processed",
-        baseURL: getServerUrl(),
-        headers: authHeader()
-    });
-};
-
-// Get all requests for tracking - available to all roles
+// Get all requests for tracking (all authenticated roles)
 const getAllRequestsForTracking = async () => {
-    try {
-        console.log("Calling getAllRequestsForTracking");
-        const headers = authHeader();
-        console.log("Headers for tracking API call:", headers);
-
-        const response = await axios({
-            method: 'get',
-            url: API_URL + "track",
-            baseURL: getServerUrl(),
-            headers: headers
-        });
-
-        console.log("Track response:", response);
-        return response;
-    } catch (error) {
-        console.error("Error in getAllRequestsForTracking:", error);
-
-        // If we can't get data from the API, provide empty results to avoid breaking the UI
-        console.log("Returning empty results as fallback");
-        return { data: [] };
-    }
+    return axios.get(API_URL + "track");
 };
 
 // Get requests by state
-const getRequestsByState = (state) => {
-    return axios({
-        method: 'get',
-        url: API_URL + "state/" + state,
-        baseURL: getServerUrl(),
-        headers: authHeader()
-    });
+const getRequestsByState = async (state) => {
+    return axios.get(API_URL + "state/" + state);
 };
 
 // Search requests by name
-const searchRequestsByName = (query) => {
-    return axios({
-        method: 'get',
-        url: API_URL + "search/name?query=" + query,
-        baseURL: getServerUrl(),
-        headers: authHeader()
-    });
+const searchRequestsByName = async (query) => {
+    return axios.get(API_URL + "search/name?query=" + encodeURIComponent(query));
 };
 
 // Search requests by CIN
-const searchRequestsByCin = (query) => {
-    return axios({
-        method: 'get',
-        url: API_URL + "search/cin?query=" + query,
-        baseURL: getServerUrl(),
-        headers: authHeader()
-    });
+const searchRequestsByCin = async (query) => {
+    return axios.get(API_URL + "search/cin?query=" + encodeURIComponent(query));
 };
 
-// Get a single request by ID
-const getRequestById = (id) => {
-    return axios({
-        method: 'get',
-        url: API_URL + id,
-        baseURL: getServerUrl(),
-        headers: authHeader()
-    });
+// Get request by ID
+const getRequestById = async (id) => {
+    return axios.get(API_URL + id);
 };
 
-// Delete a request - MANAGER only
-const deleteRequest = (id) => {
-    return axios({
-        method: 'delete',
-        url: API_URL + id,
-        baseURL: getServerUrl(),
-        headers: authHeader()
-    });
+// Update a request (PROCESSING or MANAGER role)
+const updateRequest = async (id, requestData) => {
+    return axios.put(API_URL + id, requestData);
 };
 
-// Bulk update today's requests to EN_TRAITEMENT status (FRONTDESK only)
-const bulkUpdateTodayRequests = () => {
-    return axios({
-        method: 'put',
-        url: API_URL + "bulk-update-today",
-        baseURL: getServerUrl(),
-        headers: authHeader()
-    });
+// Delete a request (MANAGER role only)
+const deleteRequest = async (id) => {
+    return axios.delete(API_URL + id);
 };
 
-// Generate and download a receipt PDF for a request
-const printReceipt = (id) => {
-    return axios({
-        method: 'get',
-        url: API_URL + id + '/receipt',
-        baseURL: getServerUrl(),
-        headers: authHeader(),
-        responseType: 'blob'
-    })
-        .then(response => {
-            // Create a blob from the PDF data
-            const blob = new Blob([response.data], { type: 'application/pdf' });
-
-            // Create a link element to download the PDF
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `recu_demande_${id}.pdf`);
-
-            // Append to the document, click it, and remove it
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            // Clean up the URL object
-            window.URL.revokeObjectURL(url);
-
-            return response;
-        });
+// Edit a request by creator within 15 minutes of creation
+const editRequest = async (id, requestData) => {
+    return axios.put(API_URL + "edit/" + id, requestData);
 };
 
-// Export the service
+// Bulk update today's requests to EN_TRAITEMENT status
+const bulkUpdateTodayRequests = async () => {
+    return axios.put(API_URL + "bulk-update-today");
+};
+
+// Generate and download a receipt PDF
+const generateReceiptPdf = async (id) => {
+    return axios.get(API_URL + id + "/receipt", { responseType: 'blob' });
+};
+
+// Print receipt - opens a printable receipt in a new window
+const printReceipt = async (id) => {
+    try {
+        if (!id) {
+            console.error("Cannot print receipt: No request ID provided");
+            throw new Error("Request ID is required to print receipt");
+        }
+
+        console.log(`Generating receipt PDF for request ID: ${id}`);
+        const response = await generateReceiptPdf(id);
+
+        // Check if response contains data
+        if (!response || !response.data) {
+            throw new Error("Invalid response from receipt generation");
+        }
+
+        // Create blob URL and open in new window for printing
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        console.log(`Created blob URL for PDF: ${url}`);
+
+        const printWindow = window.open(url);
+        if (printWindow) {
+            printWindow.addEventListener('load', function () {
+                printWindow.print();
+            });
+            return { success: true, message: "Receipt opened for printing" };
+        } else {
+            throw new Error("Could not open print window. Pop-up blocker might be enabled.");
+        }
+    } catch (error) {
+        console.error("Error printing receipt:", error);
+        throw error;
+    }
+};
+
 const RequestService = {
     createRequest,
-    updateRequest,
-    editRequest,
+    createRequestTest,
     getAllRequests,
     getMySubmissions,
     getMyProcessedRequests,
@@ -299,8 +157,11 @@ const RequestService = {
     searchRequestsByName,
     searchRequestsByCin,
     getRequestById,
+    updateRequest,
     deleteRequest,
+    editRequest,
     bulkUpdateTodayRequests,
+    generateReceiptPdf,
     printReceipt
 };
 

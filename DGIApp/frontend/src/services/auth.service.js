@@ -1,5 +1,4 @@
 import axios from "axios";
-import { getServerUrl } from "./axios-config";
 
 const API_URL = "/api/auth/";
 
@@ -43,10 +42,9 @@ const register = (username, email, password) => {
 };
 
 const login = (username, password) => {
-    // Ensure we're using the correct baseURL for this request
-    const url = API_URL + "signin";
+    console.log("Attempting login to:", API_URL + "signin");
     return axios
-        .post(url, {
+        .post(API_URL + "signin", {
             username,
             password,
         })
@@ -58,9 +56,6 @@ const login = (username, password) => {
 
                     // Set the auth header globally for all future requests
                     setAuthHeader(response.data.accessToken);
-
-                    // Force axios to use the token for all future requests
-                    axios.defaults.headers.common["Authorization"] = `Bearer ${response.data.accessToken}`;
 
                     // Dispatch an event so other components know authentication changed
                     window.dispatchEvent(new Event('auth-change'));
@@ -103,7 +98,7 @@ const getCurrentUser = () => {
 const getProfile = async () => {
     // Using authorization header from the interceptor or the header set in getCurrentUser
     try {
-        return await axios.get(getServerUrl() + '/api/auth/profile');
+        return await axios.get(API_URL + 'profile');
     } catch (error) {
         console.error("Error getting profile from standard endpoint:", error);
 
@@ -132,7 +127,7 @@ const getProfile = async () => {
 
 const changePassword = async (newPassword) => {
     return axios.post(
-        getServerUrl() + '/api/auth/change-password',
+        API_URL + 'change-password',
         { newPassword },
         { headers: { 'Content-Type': 'application/json' } }
     );

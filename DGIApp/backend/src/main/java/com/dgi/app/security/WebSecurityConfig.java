@@ -113,12 +113,9 @@ public class WebSecurityConfig implements WebMvcConfigurer {
         // for development
         String allowedOriginsConfig = System.getenv("CORS_ALLOWED_ORIGINS");
         if (allowedOriginsConfig == null || allowedOriginsConfig.isEmpty()) {
-            // Default to both frontend ports for development
-            configuration.setAllowedOrigins(Arrays.asList(
-                    "http://localhost:3000", // React dev server
-                    "http://localhost:8080" // When served through backend
-            ));
-            logger.info("Using default development CORS configuration");
+            // Allow all origins for local network access
+            configuration.addAllowedOrigin("*");
+            logger.info("Using open CORS configuration for network access");
         } else {
             configuration.setAllowedOrigins(
                     Arrays.asList(allowedOriginsConfig.split(",")));
@@ -135,7 +132,9 @@ public class WebSecurityConfig implements WebMvcConfigurer {
                 "Accept", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
 
         configuration.setExposedHeaders(Arrays.asList("X-Auth-Token", "Authorization"));
-        configuration.setAllowCredentials(Boolean.TRUE);
+
+        // Cannot use allowCredentials with wildcard origin
+        configuration.setAllowCredentials(false);
 
         // Set max age for preflight requests
         configuration.setMaxAge(3600L);

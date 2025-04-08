@@ -37,7 +37,7 @@ import java.time.format.DateTimeFormatter;
 import com.dgi.app.service.PdfService;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*", methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
-        RequestMethod.DELETE })
+        RequestMethod.DELETE, RequestMethod.OPTIONS })
 @RestController
 @RequestMapping("/api/requests")
 public class RequestController {

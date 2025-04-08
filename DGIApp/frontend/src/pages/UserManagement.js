@@ -30,7 +30,6 @@ import AddIcon from '@mui/icons-material/Add';
 import AuthService from "../services/auth.service";
 import UserService from "../services/user.service";
 import axios from "axios";
-import { getServerUrl } from "../services/axios-config";
 
 const UserManagement = () => {
     const [users, setUsers] = useState([]);
@@ -197,7 +196,8 @@ const UserManagement = () => {
 
                     // If the standard endpoint fails, try the test endpoint
                     console.log('Attempting to update user with test endpoint...');
-                    console.log('User data being sent to test endpoint:', {
+                    // Log the update payload
+                    console.log('User update payload:', {
                         id: editingUser.id,
                         username: formData.username,
                         email: formData.email,
@@ -205,16 +205,15 @@ const UserManagement = () => {
                         role: formData.role
                     });
 
-                    // Log the endpoint URL being used
-                    console.log(`Using endpoint URL: ${getServerUrl()}/api/test/update-user/${editingUser.id}`);
-
                     try {
-                        UserService.updateUserTest(
+                        UserService.updateTestUser(
                             editingUser.id,
-                            formData.username,
-                            formData.email,
-                            formData.password,
-                            formData.role
+                            {
+                                username: formData.username,
+                                email: formData.email,
+                                password: formData.password,
+                                role: formData.role
+                            }
                         )
                             .then((response) => {
                                 console.log('User updated via test endpoint:', response.data);
@@ -235,7 +234,7 @@ const UserManagement = () => {
                                     (error.response?.data?.message || testError.response?.data?.message || error.message));
                             });
                     } catch (e) {
-                        console.error('Exception caught when trying to call updateUserTest:', e);
+                        console.error('Exception caught when trying to call updateTestUser:', e);
                     }
                 });
         } else if (dialogType === 'delete' && editingUser) {

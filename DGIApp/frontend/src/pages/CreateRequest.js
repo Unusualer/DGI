@@ -88,9 +88,9 @@ function CreateRequest() {
             const response = await RequestService.createRequest(requestData);
             console.log("Create request response:", response);
 
-            // Response can be either from axios or our fetch wrapper
-            const responseData = response.data;
-            const requestId = responseData.id;
+            // Get ID directly from the response - no need for nested checks
+            const requestId = response.id;
+            console.log("Request created with ID:", requestId);
 
             setRequestId(requestId);
             setSuccess(`Demande créée avec succès, ID: ${requestId}`);
