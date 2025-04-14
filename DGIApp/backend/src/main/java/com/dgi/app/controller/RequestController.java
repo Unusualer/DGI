@@ -563,10 +563,6 @@ public class RequestController {
         try {
             // Get current user
             User currentUser = getCurrentUser();
-            boolean isManager = currentUser.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER"));
-            boolean isProcessing = currentUser.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_PROCESSING"));
             boolean isFrontdesk = currentUser.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_FRONTDESK"));
 

@@ -42,7 +42,7 @@ public class PdfService {
             PdfFont bodyFont = PdfFontFactory.createFont(StandardFonts.HELVETICA);
 
             // Add title
-            Paragraph title = new Paragraph("Reçu de Dépôt du demande à l'inscription au taxe professionel")
+            Paragraph title = new Paragraph("Reçu de Dépôt de la demande à l'inscription à la TP")
                     .setFont(titleFont)
                     .setFontSize(16)
                     .setTextAlignment(TextAlignment.CENTER)
@@ -78,8 +78,8 @@ public class PdfService {
 
             // Add footer text
             document.add(
-                    new Paragraph("Ce reçu confirme le dépôt de votre demande d'inscription au taxe professionel. " +
-                            "Veuillez conserver ce document comme preuve de votre demande.")
+                    new Paragraph("Ce reçu confirme le dépôt de votre demande d'inscription à la TP. " +
+                            "Veuillez conserver ce document.")
                             .setFont(bodyFont)
                             .setFontSize(10)
                             .setTextAlignment(TextAlignment.CENTER)
