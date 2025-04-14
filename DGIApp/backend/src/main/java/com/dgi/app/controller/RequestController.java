@@ -555,13 +555,20 @@ public class RequestController {
         }
     }
 
-    // Edit a request by creator within 15 minutes of creation
+    // Edit a request: frontdesk can edit basic fields on the same day,
+    // managers/processing can edit all fields anytime
     @PutMapping("/edit/{id}")
-    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER') or hasRole('PROCESSING')")
     public ResponseEntity<?> editRequest(@PathVariable Long id, @Valid @RequestBody RequestCreateRequest editRequest) {
         try {
             // Get current user
             User currentUser = getCurrentUser();
+            boolean isManager = currentUser.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER"));
+            boolean isProcessing = currentUser.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_PROCESSING"));
+            boolean isFrontdesk = currentUser.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_FRONTDESK"));
 
             // Find the request
             Optional<Request> requestData = requestRepository.findById(id);
@@ -573,23 +580,35 @@ public class RequestController {
 
             Request request = requestData.get();
 
-            // Check if the current user is the creator of the request or a manager
-            if (!request.getCreator().getId().equals(currentUser.getId()) &&
-                    !currentUser.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER"))) {
+            // Check permissions:
+            // 1. Managers can edit any request
+            // 2. Processing can edit any request
+            // 3. Frontdesk can only edit their own requests
+            if (isFrontdesk && !request.getCreator().getId().equals(currentUser.getId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(new MessageResponse("Error: You are not authorized to edit this request"));
             }
 
-            // Check if the request was created within the last 15 minutes
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime createdTime = request.getCreatedAt();
-            long minutesDiff = java.time.Duration.between(createdTime, now).toMinutes();
+            // For frontdesk users only: Check if the request was created on the same
+            // calendar date
+            if (isFrontdesk) {
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime createdTime = request.getCreatedAt();
 
-            // Allow managers to edit anytime, frontdesk only within 15 minutes
-            if (minutesDiff > 15
-                    && !currentUser.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER"))) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new MessageResponse("Error: Request can only be edited within 15 minutes of creation"));
+                // Extract just the date part (year, month, day) without time
+                boolean isSameCalendarDate = now.toLocalDate().equals(createdTime.toLocalDate());
+
+                // Log for debugging
+                System.out.println("DEBUG: Edit Request - Created date: " + createdTime.toLocalDate() +
+                        ", Current date: " + now.toLocalDate() +
+                        ", Same date: " + isSameCalendarDate);
+
+                // Frontdesk users can only edit on the same calendar date
+                if (!isSameCalendarDate) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new MessageResponse(
+                                    "Error: Frontdesk users can only edit requests on the day of creation"));
+                }
             }
 
             // Validate that at least one identifier is provided
@@ -599,7 +618,7 @@ public class RequestController {
                         .body(new MessageResponse("Error: At least one identifier (CIN, IF, or ICE) must be provided"));
             }
 
-            // Update request fields that are editable by frontdesk
+            // Update basic fields (editable by all roles)
             request.setDateEntree(editRequest.getDateEntree());
             request.setRaisonSocialeNomsPrenom(editRequest.getRaisonSocialeNomsPrenom());
             request.setCin(editRequest.getCin());
@@ -607,6 +626,10 @@ public class RequestController {
             request.setObjet(editRequest.getObjet());
             request.setIfValue(editRequest.getIfValue());
             request.setIce(editRequest.getIce());
+
+            // For manager or processing, if they need to update processing fields,
+            // they should use the standard update endpoint, not the edit endpoint
+
             request.setUpdatedAt(LocalDateTime.now());
 
             // Save the updated request

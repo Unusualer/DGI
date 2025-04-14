@@ -77,28 +77,54 @@ function RequestDetail() {
     }, [id]);
 
     useEffect(() => {
-        // Check if the request can be edited (within 15 minutes of creation)
+        // Check if the request can be edited (created on the same calendar date for frontdesk only)
         if (request && request.createdAt && currentUser) {
             const createdAt = new Date(request.createdAt);
             const now = new Date();
-            const diffMs = now - createdAt;
-            const diffMins = Math.floor(diffMs / 60000);
-            const timeLeft = 15 - diffMins;
+
+            // Extract just the date part (year, month, day) for both dates
+            const createdDateStr = createdAt.toISOString().split('T')[0]; // YYYY-MM-DD
+            const nowDateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            // Check if created on the same calendar date
+            const isSameCalendarDate = createdDateStr === nowDateStr;
 
             const isCreator = currentUser.id === request.creatorId;
             const isManager = currentUser.role === "ROLE_MANAGER";
+            const isProcessing = currentUser.role === "ROLE_PROCESSING";
             const isFrontdesk = currentUser.role === "ROLE_FRONTDESK";
 
-            setTimeLeftToEdit(timeLeft > 0 ? timeLeft : 0);
-            // Frontdesk can edit their own requests within time limit, managers can edit any request
-            setCanEdit((timeLeft > 0 && isCreator && isFrontdesk) || isManager);
+            // Log detailed timestamp information for debugging
+            console.log("Time debug info:", {
+                createdAtRaw: request.createdAt,
+                createdAtParsed: createdAt.toISOString(),
+                nowRaw: now.toISOString(),
+                createdDateStr,
+                nowDateStr,
+                isSameCalendarDate,
+                role: currentUser.role,
+                isCreator
+            });
+
+            // Different edit permissions based on role:
+            // 1. Managers can edit any request anytime
+            // 2. Processing agents can edit any request anytime
+            // 3. Frontdesk can only edit their own requests on the same calendar date
+            const canEditRequest = isManager ||
+                isProcessing ||
+                (isFrontdesk && isCreator && isSameCalendarDate);
+
+            setTimeLeftToEdit(0); // No longer using minute-based time limit
+            setCanEdit(canEditRequest);
 
             // Log for debugging
             console.log("Edit rights check:", {
                 isCreator,
                 isFrontdesk,
-                timeLeft,
-                canEdit: (timeLeft > 0 && isCreator && isFrontdesk) || isManager
+                isManager,
+                isProcessing,
+                isSameCalendarDate,
+                canEdit: canEditRequest
             });
         }
     }, [request, currentUser]);
@@ -214,21 +240,19 @@ function RequestDetail() {
         return currentUser && (currentUser.role === "ROLE_PROCESSING" || currentUser.role === "ROLE_MANAGER");
     };
 
-    // Add a new function to check if the current user is a frontdesk agent who can edit this request
+    // Update the isFrontdeskWithEditRights function 
     const isFrontdeskWithEditRights = () => {
         const result = currentUser &&
             currentUser.role === "ROLE_FRONTDESK" &&
             canEdit &&
             request &&
-            currentUser.id === request.creatorId &&
-            timeLeftToEdit > 0;
+            currentUser.id === request.creatorId;
 
         // Log for debugging
         console.log("isFrontdeskWithEditRights result:", result, {
             currentUser: currentUser?.role,
             canEdit,
-            creatorMatch: currentUser?.id === request?.creatorId,
-            timeLeft: timeLeftToEdit
+            creatorMatch: currentUser?.id === request?.creatorId
         });
 
         return result;
@@ -451,9 +475,9 @@ function RequestDetail() {
                             <Box sx={{ mt: 3, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
                                 {canEdit && (
                                     <>
-                                        {timeLeftToEdit > 0 && currentUser?.role === "ROLE_FRONTDESK" && (
+                                        {currentUser?.role === "ROLE_FRONTDESK" && (
                                             <Alert severity="info" sx={{ mb: 2, width: "100%" }}>
-                                                Il vous reste {timeLeftToEdit} minute{timeLeftToEdit !== 1 ? 's' : ''} pour modifier cette demande
+                                                Vous pouvez modifier cette demande car elle a été créée aujourd'hui
                                             </Alert>
                                         )}
 

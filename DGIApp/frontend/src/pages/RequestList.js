@@ -78,22 +78,44 @@ function RequestList() {
                 console.log("Number of requests fetched:", response.data.length);
                 setRequests(response.data);
 
-                // Calculate which requests are editable by frontdesk users
-                if (user && user.role === 'ROLE_FRONTDESK') {
+                // Calculate which requests are editable based on user role
+                if (user) {
                     const now = new Date();
                     const editableMap = {};
+                    const isManager = user.role === 'ROLE_MANAGER';
+                    const isProcessing = user.role === 'ROLE_PROCESSING';
+                    const isFrontdesk = user.role === 'ROLE_FRONTDESK';
 
                     response.data.forEach(req => {
-                        // Check if user is creator and within 15 minutes
-                        if (req.creatorId === user.id && req.createdAt) {
+                        // For managers and processing agents, all requests are editable
+                        if (isManager || isProcessing) {
+                            editableMap[req.id] = true;
+                            console.log(`Request ${req.id} is editable for ${user.role}`);
+                        }
+                        // For frontdesk users, only their own requests created on the same day are editable
+                        else if (isFrontdesk && req.creatorId === user.id && req.createdAt) {
                             const createdAt = new Date(req.createdAt);
-                            const diffMs = now - createdAt;
-                            const diffMins = Math.floor(diffMs / 60000);
 
-                            // If less than 15 minutes have passed
-                            if (diffMins < 15) {
+                            // Extract just the date part (year, month, day) for both dates
+                            const createdDateStr = createdAt.toISOString().split('T')[0]; // YYYY-MM-DD
+                            const nowDateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+                            // Check if created on the same calendar date
+                            const isSameCalendarDate = createdDateStr === nowDateStr;
+
+                            // Log timestamp details for debugging
+                            console.log(`Request ${req.id} time debug:`, {
+                                createdAtRaw: req.createdAt,
+                                nowRaw: now.toISOString(),
+                                createdDateStr,
+                                nowDateStr,
+                                isSameCalendarDate
+                            });
+
+                            // Allow editing if created on the same calendar date
+                            if (isSameCalendarDate) {
                                 editableMap[req.id] = true;
-                                console.log(`Request ${req.id} is editable for ${15 - diffMins} more minutes`);
+                                console.log(`Request ${req.id} is editable for frontdesk (created today)`);
                             }
                         }
                     });
@@ -131,6 +153,7 @@ function RequestList() {
         if (currentUser?.role === 'ROLE_FRONTDESK') {
             navigate(`/edit-request/${id}`);
         } else {
+            // For managers and processing agents, navigate to the detail page with edit mode
             navigate(`/requests/${id}?edit=true`);
         }
     };

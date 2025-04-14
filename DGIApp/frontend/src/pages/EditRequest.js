@@ -52,16 +52,52 @@ function EditRequest() {
     }, [id]);
 
     useEffect(() => {
-        // Calculate time left for editing
+        // Calculate edit permissions based on role and request creation date
         if (request?.createdAt) {
             const createdAt = new Date(request.createdAt);
             const now = new Date();
-            const diffMs = now - createdAt;
-            const diffMins = Math.floor(diffMs / 60000);
-            const timeLeftMins = 15 - diffMins;
 
-            setTimeLeft(timeLeftMins > 0 ? timeLeftMins : 0);
-            setCanEdit(timeLeftMins > 0 || (currentUser?.role === "ROLE_MANAGER"));
+            // Extract just the date part (year, month, day) for both dates
+            const createdDateStr = createdAt.toISOString().split('T')[0]; // YYYY-MM-DD
+            const nowDateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            // Check if created on the same calendar date
+            const isSameCalendarDate = createdDateStr === nowDateStr;
+
+            // Log detailed timestamp information for debugging
+            console.log("EditRequest.js - Time debug info:", {
+                createdAtRaw: request.createdAt,
+                createdAtParsed: createdAt.toISOString(),
+                nowRaw: now.toISOString(),
+                createdDateStr,
+                nowDateStr,
+                isSameCalendarDate
+            });
+
+            // No longer using time-based limit
+            setTimeLeft(0);
+
+            // Different edit permissions based on role:
+            // 1. Managers can edit any request anytime
+            // 2. Processing agents can edit any request anytime
+            // 3. Frontdesk can only edit their own requests on the same calendar date
+            const isFrontdesk = currentUser?.role === "ROLE_FRONTDESK";
+            const isManager = currentUser?.role === "ROLE_MANAGER";
+            const isProcessing = currentUser?.role === "ROLE_PROCESSING";
+            const isCreator = currentUser?.id === request.creatorId;
+
+            const canEditRequest = isManager ||
+                isProcessing ||
+                (isFrontdesk && isCreator && isSameCalendarDate);
+
+            setCanEdit(canEditRequest);
+
+            console.log("Edit permissions:", {
+                role: currentUser?.role,
+                isCreator,
+                isSameCalendarDate,
+                canEdit: canEditRequest
+            });
         }
     }, [request, currentUser]);
 
@@ -82,37 +118,50 @@ function EditRequest() {
             setPmPp(response.data.pmPp || "PP");
             setObjet(response.data.objet || "");
 
-            // Check if the current user is the creator or a manager
+            // Get current user
             const user = AuthService.getCurrentUser();
             if (!user) {
                 setError("Utilisateur non authentifié");
                 return;
             }
 
-            const isCreator = user.id === response.data.creatorId;
             const isManager = user.role === "ROLE_MANAGER";
+            const isProcessing = user.role === "ROLE_PROCESSING";
+            const isFrontdesk = user.role === "ROLE_FRONTDESK";
+            const isCreator = user.id === response.data.creatorId;
 
-            if (!isCreator && !isManager) {
-                setError("Vous n'êtes pas autorisé à modifier cette demande");
+            // Check edit permissions
+            if (isFrontdesk && !isCreator) {
+                setError("Vous n'êtes pas autorisé à modifier cette demande car vous n'êtes pas son créateur");
+                setCanEdit(false);
                 return;
             }
 
-            // Calculate if within 15 minute window for frontdesk users
-            if (!isManager) {
+            // For frontdesk users, check if request was created on the same calendar date
+            if (isFrontdesk) {
                 const createdAt = new Date(response.data.createdAt);
                 const now = new Date();
-                const diffMs = now - createdAt;
-                const diffMins = Math.floor(diffMs / 60000);
 
-                if (diffMins > 15) {
-                    setError("Cette demande ne peut être modifiée que dans les 15 minutes suivant sa création");
+                // Extract just the date part for both dates
+                const createdDateStr = createdAt.toISOString().split('T')[0]; // YYYY-MM-DD
+                const nowDateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+
+                // Check if created on the same calendar date
+                const isSameCalendarDate = createdDateStr === nowDateStr;
+
+                if (!isSameCalendarDate) {
+                    setError("Cette demande ne peut être modifiée que le jour de sa création");
                     setCanEdit(false);
                 } else {
                     setCanEdit(true);
-                    setTimeLeft(15 - diffMins);
                 }
-            } else {
+            } else if (isManager || isProcessing) {
+                // Managers and processing agents can always edit
                 setCanEdit(true);
+            } else {
+                // Any other role cannot edit
+                setError("Vous n'avez pas les droits nécessaires pour modifier cette demande");
+                setCanEdit(false);
             }
         } catch (error) {
             console.error("Error fetching request details:", error);
@@ -220,9 +269,15 @@ function EditRequest() {
                 Modifier la Demande
             </Typography>
 
-            {timeLeft > 0 && currentUser?.role !== "ROLE_MANAGER" && (
+            {currentUser?.role === "ROLE_FRONTDESK" && canEdit && (
                 <Alert severity="info" sx={{ mb: 3 }}>
-                    Temps restant pour modifier: {timeLeft} minute{timeLeft !== 1 ? 's' : ''}
+                    Vous pouvez modifier cette demande car elle a été créée aujourd'hui
+                </Alert>
+            )}
+
+            {(currentUser?.role === "ROLE_MANAGER" || currentUser?.role === "ROLE_PROCESSING") && (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                    En tant que {currentUser?.role === "ROLE_MANAGER" ? "manager" : "agent de traitement"}, vous pouvez modifier toutes les demandes à tout moment
                 </Alert>
             )}
 
