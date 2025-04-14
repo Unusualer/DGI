@@ -1,9 +1,19 @@
 export default function authHeader() {
-    const user = JSON.parse(localStorage.getItem('user'));
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
 
-    if (user && (user.token || user.accessToken)) {
+        if (!user) {
+            console.warn("Aucun utilisateur trouvé dans localStorage");
+            return {};
+        }
+
         // Get token from either property
         const token = user.token || user.accessToken;
+
+        if (!token) {
+            console.warn("Aucun jeton trouvé pour l'utilisateur:", user.username);
+            return {};
+        }
 
         // Check if the token is expired
         try {
@@ -14,17 +24,27 @@ export default function authHeader() {
             // Check token expiration
             const currentTime = Date.now() / 1000;
             if (tokenData.exp && tokenData.exp < currentTime) {
-                // Token is expired but we'll let the backend handle rejection
-                // This prevents logout on refresh issues
+                console.warn("Le jeton est expiré. Date d'expiration:", new Date(tokenData.exp * 1000).toISOString());
+                console.warn("Heure actuelle:", new Date(currentTime * 1000).toISOString());
+                // Jeton expiré, mais on le renvoie quand même pour que le backend puisse rejeter correctement
+                console.log("Envoi du jeton expiré pour traitement côté serveur");
+            } else {
+                // Calculer le temps restant avant expiration
+                if (tokenData.exp) {
+                    const timeLeftMinutes = Math.round((tokenData.exp - currentTime) / 60);
+                    console.log(`Jeton valide pour encore ~${timeLeftMinutes} minutes`);
+                }
             }
 
             return { Authorization: 'Bearer ' + token };
         } catch (error) {
+            console.error("Erreur lors de l'analyse du jeton:", error);
             // Return the token even if we can't parse it
             // Backend will validate and reject if needed
             return { Authorization: 'Bearer ' + token };
         }
-    } else {
+    } catch (error) {
+        console.error("Erreur dans authHeader:", error);
         return {};
     }
 } 

@@ -58,6 +58,47 @@ docker-compose up -d
 # - Backend API: http://localhost:8080/api
 ```
 
+## Windows Hosting Guide
+
+For deployment on Windows machines with data persistence:
+
+### Prerequisites
+1. Install PostgreSQL
+   - Download from: https://www.postgresql.org/download/windows/
+   - During installation, set password to "postgres" (or update in script)
+   - Note: Compatible with PostgreSQL 12 or 17
+
+2. Install Docker Desktop
+   - Download from: https://www.docker.com/products/docker-desktop/
+   - Complete installation and ensure it's running
+
+### Deployment Steps
+
+1. **Run the application**
+   - Execute `run-dgi.bat` as Administrator
+   - You'll see two options:
+     1. Start the application normally (preserves existing data)
+     2. Initialize/reset the database (WARNING: deletes existing data)
+   - First-time users should select option 2 to initialize the database
+   - For subsequent runs, select option 1 to preserve your data
+
+2. **What the script does**
+   - Checks/starts PostgreSQL service
+   - Verifies/creates the database
+   - Checks if Docker is running
+   - Configures environment to use local PostgreSQL
+   - Starts the application using Docker Compose
+
+3. **Accessing the Application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8080/api
+
+### Persistent Data Storage
+The application uses your local PostgreSQL installation rather than a Docker container for the database. This ensures all data persists between restarts of Docker or your computer.
+
+### Development Mode (Optional)
+For development purposes, use `run-dev.bat` instead. This uses Docker for all components (including PostgreSQL) but note that data will not persist when Docker closes.
+
 ## Local Development Setup
 
 ### Backend
@@ -122,7 +163,7 @@ The system comes with the following pre-configured user accounts:
    - **Frontdesk** user delivers the completed request (status: DELIVERED)
    - Request lifecycle is completed
 
-## Deployment on Production Server
+## Deployment on Linux/Unix Server
 
 1. Install Docker and Docker Compose:
 ```bash

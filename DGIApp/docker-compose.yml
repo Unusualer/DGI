@@ -1,32 +1,17 @@
 version: '3.8'
 
 services:
-  # PostgreSQL database
-  postgres:
-    image: postgres:14-alpine
-    container_name: dgi-postgres
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-dgiapp}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - dgi-network
-    restart: unless-stopped
-
   # Spring Boot backend
   backend:
     build: ./backend
     container_name: dgi-backend
-    depends_on:
-      - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-dgiapp}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # Explicitly connecting to host PostgreSQL - never initialize
+      SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5432/dgiapp
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_SQL_INIT_MODE: never
+      SPRING_JPA_DEFER_DATASOURCE_INITIALIZATION: "false"
       JWT_SECRET: ${JWT_SECRET:-G4r8LWYZBYvBgNoRq92kMPeQmA2uRCrV3NyRWH7bJDbC4rjMEWTzZ3RNvcj6sXwK}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
@@ -36,6 +21,9 @@ services:
       LOG_LEVEL_HIBERNATE_BINDER: ${LOG_LEVEL_HIBERNATE_BINDER:-INFO}
       LOG_LEVEL_JWT: ${LOG_LEVEL_JWT:-INFO}
       LOG_LEVEL_SERVICES: ${LOG_LEVEL_SERVICES:-INFO}
+    # Ensure host.docker.internal works on all platforms
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "0.0.0.0:8080:8080"
     networks:
@@ -57,6 +45,3 @@ services:
 networks:
   dgi-network:
     driver: bridge
-
-volumes:
-  postgres-data:

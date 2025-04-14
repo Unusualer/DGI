@@ -92,6 +92,14 @@ function RequestDetail() {
             setTimeLeftToEdit(timeLeft > 0 ? timeLeft : 0);
             // Frontdesk can edit their own requests within time limit, managers can edit any request
             setCanEdit((timeLeft > 0 && isCreator && isFrontdesk) || isManager);
+
+            // Log for debugging
+            console.log("Edit rights check:", {
+                isCreator,
+                isFrontdesk,
+                timeLeft,
+                canEdit: (timeLeft > 0 && isCreator && isFrontdesk) || isManager
+            });
         }
     }, [request, currentUser]);
 
@@ -208,12 +216,22 @@ function RequestDetail() {
 
     // Add a new function to check if the current user is a frontdesk agent who can edit this request
     const isFrontdeskWithEditRights = () => {
-        return currentUser &&
+        const result = currentUser &&
             currentUser.role === "ROLE_FRONTDESK" &&
             canEdit &&
             request &&
             currentUser.id === request.creatorId &&
             timeLeftToEdit > 0;
+
+        // Log for debugging
+        console.log("isFrontdeskWithEditRights result:", result, {
+            currentUser: currentUser?.role,
+            canEdit,
+            creatorMatch: currentUser?.id === request?.creatorId,
+            timeLeft: timeLeftToEdit
+        });
+
+        return result;
     };
 
     const formatDate = (dateString) => {
@@ -438,6 +456,7 @@ function RequestDetail() {
                                                 Il vous reste {timeLeftToEdit} minute{timeLeftToEdit !== 1 ? 's' : ''} pour modifier cette demande
                                             </Alert>
                                         )}
+
                                         {/* For processing/manager, navigate to edit within this page */}
                                         {canUpdateRequest() && (
                                             <Button
@@ -449,6 +468,7 @@ function RequestDetail() {
                                                 Modifier la Demande
                                             </Button>
                                         )}
+
                                         {/* For frontdesk agents, navigate to edit-request page */}
                                         {isFrontdeskWithEditRights() && (
                                             <Button
@@ -457,7 +477,7 @@ function RequestDetail() {
                                                 onClick={() => navigate(`/edit-request/${id}`)}
                                                 sx={{ mb: 2, width: "220px" }}
                                             >
-                                                Modifier la Demande
+                                                Modifier la Demande (Frontdesk)
                                             </Button>
                                         )}
                                     </>

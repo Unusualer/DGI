@@ -134,7 +134,7 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                         )}
 
                         <IconButton
-                            aria-label="account of current user"
+                            aria-label="compte utilisateur"
                             aria-controls="menu-appbar"
                             aria-haspopup="true"
                             onClick={handleMenu}

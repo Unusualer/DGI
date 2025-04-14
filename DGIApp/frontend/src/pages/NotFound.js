@@ -18,10 +18,10 @@ function NotFound() {
                     404
                 </Typography>
                 <Typography variant="h4" sx={{ mb: 2 }}>
-                    Page Not Found
+                    Page Non Trouvée
                 </Typography>
                 <Typography variant="body1" sx={{ mb: 4 }}>
-                    The page you are looking for doesn't exist or has been moved.
+                    La page que vous recherchez n'existe pas ou a été déplacée.
                 </Typography>
                 <Button
                     component={Link}
@@ -29,7 +29,7 @@ function NotFound() {
                     variant="contained"
                     color="primary"
                 >
-                    Return to Home
+                    Retour à l'Accueil
                 </Button>
             </Box>
         </Container>

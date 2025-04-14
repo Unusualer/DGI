@@ -42,6 +42,7 @@ function RequestList() {
     const [processingRequests, setProcessingRequests] = useState(false);
     const [successMessage, setSuccessMessage] = useState(null);
     const [exporting, setExporting] = useState(false);
+    const [editableRequests, setEditableRequests] = useState({});
 
     useEffect(() => {
         // Get current user
@@ -76,6 +77,29 @@ function RequestList() {
             if (response && response.data) {
                 console.log("Number of requests fetched:", response.data.length);
                 setRequests(response.data);
+
+                // Calculate which requests are editable by frontdesk users
+                if (user && user.role === 'ROLE_FRONTDESK') {
+                    const now = new Date();
+                    const editableMap = {};
+
+                    response.data.forEach(req => {
+                        // Check if user is creator and within 15 minutes
+                        if (req.creatorId === user.id && req.createdAt) {
+                            const createdAt = new Date(req.createdAt);
+                            const diffMs = now - createdAt;
+                            const diffMins = Math.floor(diffMs / 60000);
+
+                            // If less than 15 minutes have passed
+                            if (diffMins < 15) {
+                                editableMap[req.id] = true;
+                                console.log(`Request ${req.id} is editable for ${15 - diffMins} more minutes`);
+                            }
+                        }
+                    });
+
+                    setEditableRequests(editableMap);
+                }
             } else {
                 console.error("Response received but no data property");
                 setRequests([]);
@@ -103,7 +127,12 @@ function RequestList() {
     };
 
     const handleEditRequest = (id) => {
-        navigate(`/requests/${id}?edit=true`);
+        // For frontdesk, we use a different edit page
+        if (currentUser?.role === 'ROLE_FRONTDESK') {
+            navigate(`/edit-request/${id}`);
+        } else {
+            navigate(`/requests/${id}?edit=true`);
+        }
     };
 
     const handleSearch = (event) => {
@@ -335,7 +364,8 @@ function RequestList() {
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            {(currentUser?.role === "ROLE_MANAGER" || currentUser?.role === "ROLE_PROCESSING") ? (
+                                            {(currentUser?.role === "ROLE_MANAGER" || currentUser?.role === "ROLE_PROCESSING" ||
+                                                (currentUser?.role === "ROLE_FRONTDESK" && editableRequests[request.id])) ? (
                                                 <>
                                                     <Button
                                                         variant="contained"

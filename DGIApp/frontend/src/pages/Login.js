@@ -38,18 +38,18 @@ function Login() {
         } catch (error) {
             console.error("Login error:", error);
 
-            let errorMessage = "An error occurred during login";
+            let errorMessage = "Une erreur s'est produite lors de la connexion";
 
             if (error.response) {
                 console.error("Error response:", error.response);
                 errorMessage = error.response.data?.message ||
-                    `Server error: ${error.response.status}`;
+                    `Erreur serveur: ${error.response.status}`;
             } else if (error.request) {
                 console.error("No response received:", error.request);
-                errorMessage = "No response from server. Please check your connection.";
+                errorMessage = "Aucune réponse du serveur. Veuillez vérifier votre connexion.";
             } else {
                 console.error("Error:", error.message);
-                errorMessage = `Error: ${error.message}`;
+                errorMessage = `Erreur: ${error.message}`;
             }
 
             setMessage(errorMessage);

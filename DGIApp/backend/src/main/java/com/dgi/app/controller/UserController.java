@@ -5,6 +5,7 @@ import com.dgi.app.model.User;
 import com.dgi.app.payload.request.SignupRequest;
 import com.dgi.app.payload.response.MessageResponse;
 import com.dgi.app.repository.UserRepository;
+import com.dgi.app.repository.RequestRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,9 @@ public class UserController {
 
     @Autowired
     PasswordEncoder encoder;
+
+    @Autowired
+    private RequestRepository requestRepository;
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
@@ -200,12 +204,112 @@ public class UserController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
-        Optional<User> user = userRepository.findById(id);
-        if (user.isPresent()) {
-            userRepository.deleteById(id);
-            return ResponseEntity.ok(new MessageResponse("User deleted successfully!"));
-        } else {
-            return ResponseEntity.notFound().build();
+        System.out.println("DEBUG: Requête de suppression d'utilisateur reçue pour l'ID: " + id);
+        try {
+            Optional<User> user = userRepository.findById(id);
+            if (user.isPresent()) {
+                System.out.println("DEBUG: Utilisateur trouvé pour suppression: " + user.get().getUsername());
+
+                // Check if this user has any associated requests as agent
+                List<com.dgi.app.model.Request> associatedRequests = requestRepository.findByAgent(user.get());
+                if (!associatedRequests.isEmpty()) {
+                    System.out.println("DEBUG: L'utilisateur est assigné comme agent à " + associatedRequests.size()
+                            + " demandes.");
+                    return ResponseEntity.badRequest()
+                            .body(new MessageResponse("Cannot delete this user because they are assigned to " +
+                                    associatedRequests.size()
+                                    + " requests. Please reassign these requests first or use the 'reassign-and-delete' endpoint."));
+                }
+
+                // Check if this user has created any requests
+                List<com.dgi.app.model.Request> createdRequests = requestRepository.findByCreator(user.get());
+                if (!createdRequests.isEmpty()) {
+                    System.out.println("DEBUG: L'utilisateur a créé " + createdRequests.size() + " demandes.");
+                    return ResponseEntity.badRequest()
+                            .body(new MessageResponse("Cannot delete this user because they have created " +
+                                    createdRequests.size()
+                                    + " requests. Please use the 'reassign-and-delete' endpoint."));
+                }
+
+                userRepository.deleteById(id);
+                System.out.println("DEBUG: Utilisateur supprimé avec succès");
+                return ResponseEntity.ok(new MessageResponse("User deleted successfully!"));
+            } else {
+                System.out.println("DEBUG: Aucun utilisateur trouvé pour l'ID: " + id);
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception lors de la suppression de l'utilisateur: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(new MessageResponse("Error deleting user: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/reassign-and-delete/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
+    public ResponseEntity<?> reassignAndDeleteUser(@PathVariable Long id, @RequestParam Long reassignToUserId) {
+        System.out.println("DEBUG: Requête de réassignation et suppression d'utilisateur reçue pour l'ID: " + id);
+
+        try {
+            // Check if both users exist
+            Optional<User> userToDelete = userRepository.findById(id);
+            Optional<User> reassignToUser = userRepository.findById(reassignToUserId);
+
+            if (!userToDelete.isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("User to delete not found with id: " + id));
+            }
+
+            if (!reassignToUser.isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Reassignment user not found with id: " + reassignToUserId));
+            }
+
+            User deleteUser = userToDelete.get();
+            User targetUser = reassignToUser.get();
+
+            System.out.println("DEBUG: Réassignation des demandes de " + deleteUser.getUsername() +
+                    " à " + targetUser.getUsername());
+
+            // Get all requests where the user to be deleted is the agent
+            List<com.dgi.app.model.Request> agentRequests = requestRepository.findByAgent(deleteUser);
+            for (com.dgi.app.model.Request request : agentRequests) {
+                request.setAgent(targetUser);
+                System.out.println("DEBUG: Réassignation de la demande " + request.getId() +
+                        " de l'agent " + deleteUser.getUsername() + " à " + targetUser.getUsername());
+            }
+
+            // Get all requests where the user to be deleted is the creator
+            List<com.dgi.app.model.Request> createdRequests = requestRepository.findByCreator(deleteUser);
+            for (com.dgi.app.model.Request request : createdRequests) {
+                request.setCreator(targetUser);
+                System.out.println("DEBUG: Réassignation de la demande créée " + request.getId() +
+                        " du créateur " + deleteUser.getUsername() + " à " + targetUser.getUsername());
+            }
+
+            // Save all updated requests
+            if (!agentRequests.isEmpty() || !createdRequests.isEmpty()) {
+                requestRepository.saveAll(agentRequests);
+                requestRepository.saveAll(createdRequests);
+                System.out.println("DEBUG: Toutes les demandes ont été réassignées avec succès");
+            } else {
+                System.out.println("DEBUG: Aucune demande à réassigner");
+            }
+
+            // Now delete the user
+            userRepository.delete(deleteUser);
+            System.out.println("DEBUG: Utilisateur supprimé avec succès après réassignation");
+
+            return ResponseEntity.ok(new MessageResponse("User deleted successfully after reassigning " +
+                    (agentRequests.size() + createdRequests.size()) + " requests to user " +
+                    targetUser.getUsername()));
+
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception lors de la réassignation et suppression: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(new MessageResponse("Error during reassignment and deletion: " + e.getMessage()));
         }
     }
 }

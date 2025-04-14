@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Box, CssBaseline, createTheme, ThemeProvider } from "@mui/material";
 import "./App.css";
 import axios from "axios";
+import { frFR } from '@mui/material/locale';
 
 import AuthService from "./services/auth.service";
 import { setupAxios } from './services/axios-config';
@@ -34,7 +35,7 @@ const theme = createTheme({
             main: "#dc004e",
         },
     },
-});
+}, frFR);
 
 function App() {
     const [currentUser, setCurrentUser] = useState(undefined);
@@ -250,6 +251,7 @@ function App() {
                             }
                         />
 
+                        <Route path="/track-request" element={<TrackRequest />} />
                         <Route path="*" element={<NotFound />} />
                     </Routes>
                 </Box>
