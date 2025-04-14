@@ -82,14 +82,27 @@ For deployment on Windows machines with data persistence:
    - First-time users should select option 2 to initialize the database
    - For subsequent runs, select option 1 to preserve your data
 
-2. **What the script does**
+2. **Configure Firewall** (First-time setup)
+   - Run the following commands in an Administrator command prompt to allow traffic:
+   ```
+   netsh advfirewall firewall add rule name="DGI Frontend" dir=in action=allow protocol=TCP localport=3000
+   netsh advfirewall firewall add rule name="DGI Backend" dir=in action=allow protocol=TCP localport=8080
+   ```
+
+3. **Build and Start the Application**
+   - To build and start all containers:
+   ```
+   docker-compose up -d --build
+   ```
+
+4. **What the script does**
    - Checks/starts PostgreSQL service
    - Verifies/creates the database
    - Checks if Docker is running
    - Configures environment to use local PostgreSQL
    - Starts the application using Docker Compose
 
-3. **Accessing the Application**
+5. **Accessing the Application**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8080/api
 
