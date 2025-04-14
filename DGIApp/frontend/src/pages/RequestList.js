@@ -20,12 +20,19 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem,
+    Grid
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import ClearIcon from "@mui/icons-material/Clear";
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import fr from 'date-fns/locale/fr';
 import RequestService from "../services/request.service";
 import AuthService from "../services/auth.service";
 
@@ -38,11 +45,15 @@ function RequestList() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("Tous");
+    const [typeFilter, setTypeFilter] = useState("Tous");
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [processingRequests, setProcessingRequests] = useState(false);
     const [successMessage, setSuccessMessage] = useState(null);
     const [exporting, setExporting] = useState(false);
     const [editableRequests, setEditableRequests] = useState({});
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
         // Get current user
@@ -168,6 +179,34 @@ function RequestList() {
         setPage(0);
     };
 
+    const handleTypeFilterChange = (event) => {
+        setTypeFilter(event.target.value);
+        setPage(0);
+    };
+
+    const handleStartDateChange = (date) => {
+        setStartDate(date);
+        setPage(0);
+    };
+
+    const handleEndDateChange = (date) => {
+        setEndDate(date);
+        setPage(0);
+    };
+
+    const handleClearFilters = () => {
+        setSearchQuery("");
+        setStatusFilter("Tous");
+        setTypeFilter("Tous");
+        setStartDate(null);
+        setEndDate(null);
+        setPage(0);
+    };
+
+    const toggleFilters = () => {
+        setShowFilters(!showFilters);
+    };
+
     const handleProcessTodayRequests = () => {
         setProcessingRequests(true);
         setSuccessMessage(null);
@@ -208,8 +247,9 @@ function RequestList() {
         }, 1000);
     };
 
-    // Filter requests based on search query and status filter
+    // Filter requests based on all filter criteria
     const filteredRequests = requests.filter((request) => {
+        // Search query filter (existing)
         const matchesSearch = searchQuery === "" ||
             (request.raisonSocialeNomsPrenom &&
                 request.raisonSocialeNomsPrenom.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -217,9 +257,42 @@ function RequestList() {
             (request.ifValue && request.ifValue.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (request.ice && request.ice.toLowerCase().includes(searchQuery.toLowerCase()));
 
+        // Status filter (existing)
         const matchesStatus = statusFilter === "Tous" || request.etat === statusFilter;
 
-        return matchesSearch && matchesStatus;
+        // PP/PM type filter (new)
+        const matchesType = typeFilter === "Tous" || request.pmPp === typeFilter;
+
+        // Date range filter (new)
+        let matchesDateRange = true;
+        if (startDate || endDate) {
+            const requestDate = new Date(request.dateEntree);
+
+            // Check if request date is after start date (if start date is set)
+            if (startDate) {
+                // Set hours to 0 for proper date comparison
+                const startDateCopy = new Date(startDate);
+                startDateCopy.setHours(0, 0, 0, 0);
+
+                if (requestDate < startDateCopy) {
+                    matchesDateRange = false;
+                }
+            }
+
+            // Check if request date is before end date (if end date is set)
+            if (endDate && matchesDateRange) {
+                // Set hours to 23:59:59 for proper date comparison
+                const endDateCopy = new Date(endDate);
+                endDateCopy.setHours(23, 59, 59, 999);
+
+                if (requestDate > endDateCopy) {
+                    matchesDateRange = false;
+                }
+            }
+        }
+
+        // Return true only if all filter conditions are met
+        return matchesSearch && matchesStatus && matchesType && matchesDateRange;
     });
 
     // Get requests for current page
@@ -284,12 +357,13 @@ function RequestList() {
                 </Alert>
             )}
 
-            <Box sx={{ display: "flex", mb: 3, flexWrap: "wrap", gap: 2, alignItems: "center" }}>
-                <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1, maxWidth: 500 }}>
+            {/* Basic search and filters */}
+            <Box sx={{ display: "flex", mb: 2, flexWrap: "wrap", gap: 2, alignItems: "center" }}>
+                <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1, maxWidth: 400 }}>
                     <TextField
                         fullWidth
                         size="small"
-                        label="Recherche par CIN ou IF ou ICE"
+                        label="Recherche par CIN, IF ou ICE"
                         variant="outlined"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -298,22 +372,14 @@ function RequestList() {
                     <SearchIcon color="action" />
                 </Box>
 
-                <FormControl sx={{ minWidth: 200 }}>
-                    <InputLabel id="status-filter-label">Filtrer par Statut</InputLabel>
-                    <Select
-                        labelId="status-filter-label"
-                        size="small"
-                        value={statusFilter}
-                        label="Filtrer par Statut"
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                        <MenuItem value="Tous">Tous</MenuItem>
-                        <MenuItem value="NOUVEAU">Nouveau</MenuItem>
-                        <MenuItem value="EN_TRAITEMENT">En Traitement</MenuItem>
-                        <MenuItem value="TRAITE">Traité</MenuItem>
-                        <MenuItem value="REJETE">Rejeté</MenuItem>
-                    </Select>
-                </FormControl>
+                <Button
+                    variant="outlined"
+                    startIcon={showFilters ? <ClearIcon /> : <FilterAltIcon />}
+                    onClick={toggleFilters}
+                    sx={{ minWidth: 140 }}
+                >
+                    {showFilters ? "Masquer filtres" : "Plus de filtres"}
+                </Button>
 
                 {(currentUser?.role === "ROLE_FRONTDESK" || currentUser?.role === "ROLE_MANAGER") && (
                     <Button
@@ -348,6 +414,93 @@ function RequestList() {
                     </Button>
                 )}
             </Box>
+
+            {/* Advanced filters section */}
+            {showFilters && (
+                <Paper sx={{ p: 2, mb: 3 }}>
+                    <Grid container spacing={2} alignItems="center">
+                        <Grid item xs={12} sm={6} md={3} lg={2}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel id="status-filter-label">Statut</InputLabel>
+                                <Select
+                                    labelId="status-filter-label"
+                                    value={statusFilter}
+                                    label="Statut"
+                                    onChange={handleStatusFilterChange}
+                                >
+                                    <MenuItem value="Tous">Tous</MenuItem>
+                                    <MenuItem value="NOUVEAU">Nouveau</MenuItem>
+                                    <MenuItem value="EN_TRAITEMENT">En Traitement</MenuItem>
+                                    <MenuItem value="TRAITE">Traité</MenuItem>
+                                    <MenuItem value="REJETE">Rejeté</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3} lg={2}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel id="type-filter-label">Type</InputLabel>
+                                <Select
+                                    labelId="type-filter-label"
+                                    value={typeFilter}
+                                    label="Type"
+                                    onChange={handleTypeFilterChange}
+                                >
+                                    <MenuItem value="Tous">Tous</MenuItem>
+                                    <MenuItem value="PP">Personne Physique</MenuItem>
+                                    <MenuItem value="PM">Personne Morale</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3} lg={2}>
+                            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+                                <DatePicker
+                                    label="Date de début"
+                                    value={startDate}
+                                    onChange={handleStartDateChange}
+                                    slotProps={{
+                                        textField: {
+                                            size: 'small',
+                                            fullWidth: true,
+                                            variant: 'outlined'
+                                        }
+                                    }}
+                                />
+                            </LocalizationProvider>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3} lg={2}>
+                            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+                                <DatePicker
+                                    label="Date de fin"
+                                    value={endDate}
+                                    onChange={handleEndDateChange}
+                                    slotProps={{
+                                        textField: {
+                                            size: 'small',
+                                            fullWidth: true,
+                                            variant: 'outlined'
+                                        }
+                                    }}
+                                />
+                            </LocalizationProvider>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3} lg={2}>
+                            <Button
+                                variant="outlined"
+                                color="secondary"
+                                onClick={handleClearFilters}
+                                startIcon={<ClearIcon />}
+                                fullWidth
+                            >
+                                Effacer filtres
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Paper>
+            )}
 
             {filteredRequests.length > 0 ? (
                 <Paper sx={{ width: "100%", overflow: "hidden" }}>
@@ -443,13 +596,10 @@ function RequestList() {
                                 ? "Vous n'avez pas encore créé de demandes."
                                 : "Aucune demande trouvée."}
                     </Typography>
-                    {searchQuery || statusFilter ? (
+                    {searchQuery || statusFilter !== "Tous" || typeFilter !== "Tous" || startDate || endDate ? (
                         <Button
                             variant="text"
-                            onClick={() => {
-                                setSearchQuery("");
-                                setStatusFilter("Tous");
-                            }}
+                            onClick={handleClearFilters}
                         >
                             Effacer les filtres
                         </Button>
