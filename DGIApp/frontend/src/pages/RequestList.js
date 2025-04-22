@@ -21,7 +21,10 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Grid
+    Grid,
+    IconButton,
+    Tooltip,
+    Snackbar
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -29,6 +32,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import ClearIcon from "@mui/icons-material/Clear";
+import PrintIcon from "@mui/icons-material/Print";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -54,6 +58,8 @@ function RequestList() {
     const [exporting, setExporting] = useState(false);
     const [editableRequests, setEditableRequests] = useState({});
     const [showFilters, setShowFilters] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState("");
 
     useEffect(() => {
         // Get current user
@@ -245,6 +251,20 @@ function RequestList() {
             setExporting(false);
             setTimeout(() => setSuccessMessage(null), 5000);
         }, 1000);
+    };
+
+    const handlePrintReceipt = async (id) => {
+        try {
+            await RequestService.printReceipt(id);
+        } catch (error) {
+            console.error("Erreur lors de l'impression du reçu:", error);
+            setSnackbarMessage("Erreur lors de l'impression du reçu");
+            setSnackbarOpen(true);
+        }
+    };
+
+    const handleCloseSnackbar = () => {
+        setSnackbarOpen(false);
     };
 
     // Filter requests based on all filter criteria
@@ -524,7 +544,7 @@ function RequestList() {
                                     <TableCell>Type</TableCell>
                                     <TableCell>Objet</TableCell>
                                     <TableCell>Statut</TableCell>
-                                    <TableCell>Actions</TableCell>
+                                    <TableCell align="center">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -548,38 +568,62 @@ function RequestList() {
                                                 size="small"
                                             />
                                         </TableCell>
-                                        <TableCell>
-                                            {(currentUser?.role === "ROLE_MANAGER" || currentUser?.role === "ROLE_PROCESSING" ||
-                                                (currentUser?.role === "ROLE_FRONTDESK" && editableRequests[request.id])) ? (
-                                                <>
-                                                    <Button
-                                                        variant="contained"
-                                                        size="small"
-                                                        startIcon={<EditIcon />}
-                                                        onClick={() => handleEditRequest(request.id)}
-                                                        sx={{ mr: 1 }}
-                                                    >
-                                                        Modifier
-                                                    </Button>
-                                                    <Button
-                                                        variant="outlined"
-                                                        size="small"
-                                                        startIcon={<VisibilityIcon />}
-                                                        onClick={() => handleViewRequest(request.id)}
-                                                    >
-                                                        Voir
-                                                    </Button>
-                                                </>
-                                            ) : (
-                                                <Button
-                                                    variant="outlined"
-                                                    size="small"
-                                                    startIcon={<VisibilityIcon />}
-                                                    onClick={() => handleViewRequest(request.id)}
-                                                >
-                                                    Voir
-                                                </Button>
-                                            )}
+                                        <TableCell align="center">
+                                            <Box sx={{ display: "flex", justifyContent: "center" }}>
+                                                {(currentUser?.role === "ROLE_MANAGER" || currentUser?.role === "ROLE_PROCESSING" ||
+                                                    (currentUser?.role === "ROLE_FRONTDESK" && editableRequests[request.id])) ? (
+                                                    <>
+                                                        <Tooltip title="Modifier">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="primary"
+                                                                onClick={() => handleEditRequest(request.id)}
+                                                            >
+                                                                <EditIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Voir détails">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="info"
+                                                                onClick={() => handleViewRequest(request.id)}
+                                                            >
+                                                                <VisibilityIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Imprimer reçu">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="secondary"
+                                                                onClick={() => handlePrintReceipt(request.id)}
+                                                            >
+                                                                <PrintIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Tooltip title="Voir détails">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="info"
+                                                                onClick={() => handleViewRequest(request.id)}
+                                                            >
+                                                                <VisibilityIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Imprimer reçu">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="secondary"
+                                                                onClick={() => handlePrintReceipt(request.id)}
+                                                            >
+                                                                <PrintIcon />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </>
+                                                )}
+                                            </Box>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -594,6 +638,8 @@ function RequestList() {
                         page={page}
                         onPageChange={handleChangePage}
                         onRowsPerPageChange={handleChangeRowsPerPage}
+                        labelRowsPerPage="Lignes par page:"
+                        labelDisplayedRows={({ from, to, count }) => `${from}–${to} sur ${count}`}
                     />
                 </Paper>
             ) : (
@@ -627,6 +673,13 @@ function RequestList() {
                     )}
                 </Paper>
             )}
+
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                message={snackbarMessage}
+            />
         </Container>
     );
 }
