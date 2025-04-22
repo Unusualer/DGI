@@ -35,6 +35,8 @@ import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import PrintIcon from "@mui/icons-material/Print";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AddIcon from "@mui/icons-material/Add";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -60,6 +62,8 @@ function AttestationList() {
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState(null);
     const [exporting, setExporting] = useState(false);
+    const [sortField, setSortField] = useState('id');
+    const [sortOrder, setSortOrder] = useState('asc');
 
     useEffect(() => {
         const user = AuthService.getCurrentUser();
@@ -147,6 +151,17 @@ function AttestationList() {
 
     const toggleFilters = () => {
         setShowFilters(!showFilters);
+    };
+
+    const handleSort = (field) => {
+        if (sortField === field) {
+            // If already sorting by this field, toggle the order
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            // If sorting by a new field, set it and default to ascending order
+            setSortField(field);
+            setSortOrder('asc');
+        }
     };
 
     const handleExportToExcel = () => {
@@ -261,8 +276,63 @@ function AttestationList() {
         return true;
     });
 
+    // Sort the filtered attestations
+    const sortedAttestations = [...filteredAttestations].sort((a, b) => {
+        // Define sorting logic for different fields
+        switch (sortField) {
+            case 'id':
+                return sortOrder === 'asc' ? a.id - b.id : b.id - a.id;
+
+            case 'nom':
+                const nomA = a.nom?.toLowerCase() || '';
+                const nomB = b.nom?.toLowerCase() || '';
+                return sortOrder === 'asc'
+                    ? nomA.localeCompare(nomB)
+                    : nomB.localeCompare(nomA);
+
+            case 'prenom':
+                const prenomA = a.prenom?.toLowerCase() || '';
+                const prenomB = b.prenom?.toLowerCase() || '';
+                return sortOrder === 'asc'
+                    ? prenomA.localeCompare(prenomB)
+                    : prenomB.localeCompare(prenomA);
+
+            case 'cin':
+                const cinA = a.cin?.toLowerCase() || '';
+                const cinB = b.cin?.toLowerCase() || '';
+                return sortOrder === 'asc'
+                    ? cinA.localeCompare(cinB)
+                    : cinB.localeCompare(cinA);
+
+            case 'ifValue':
+                const ifA = a.ifValue?.toLowerCase() || '';
+                const ifB = b.ifValue?.toLowerCase() || '';
+                return sortOrder === 'asc'
+                    ? ifA.localeCompare(ifB)
+                    : ifB.localeCompare(ifA);
+
+            case 'type':
+                return sortOrder === 'asc'
+                    ? a.type?.localeCompare(b.type || '')
+                    : b.type?.localeCompare(a.type || '');
+
+            case 'status':
+                return sortOrder === 'asc'
+                    ? a.status?.localeCompare(b.status || '')
+                    : b.status?.localeCompare(a.status || '');
+
+            case 'createdAt':
+                const dateA = new Date(a.createdAt);
+                const dateB = new Date(b.createdAt);
+                return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+
+            default:
+                return 0;
+        }
+    });
+
     // Pagination logic
-    const paginatedAttestations = filteredAttestations.slice(
+    const paginatedAttestations = sortedAttestations.slice(
         page * rowsPerPage,
         page * rowsPerPage + rowsPerPage
     );
@@ -440,14 +510,110 @@ function AttestationList() {
                         <Table aria-label="attestations table">
                             <TableHead>
                                 <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                                    <TableCell>ID</TableCell>
-                                    <TableCell>Nom</TableCell>
-                                    <TableCell>Prénom</TableCell>
-                                    <TableCell>CIN</TableCell>
-                                    <TableCell>IF</TableCell>
-                                    <TableCell>Type</TableCell>
-                                    <TableCell>Statut</TableCell>
-                                    <TableCell>Date Création</TableCell>
+                                    <TableCell
+                                        onClick={() => handleSort('id')}
+                                        sx={{ cursor: 'pointer' }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            ID
+                                            {sortField === 'id' && (
+                                                sortOrder === 'asc' ?
+                                                    <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
+                                                    <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={() => handleSort('nom')}
+                                        sx={{ cursor: 'pointer' }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            Nom
+                                            {sortField === 'nom' && (
+                                                sortOrder === 'asc' ?
+                                                    <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
+                                                    <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={() => handleSort('prenom')}
+                                        sx={{ cursor: 'pointer' }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            Prénom
+                                            {sortField === 'prenom' && (
+                                                sortOrder === 'asc' ?
+                                                    <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
+                                                    <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={() => handleSort('cin')}
+                                        sx={{ cursor: 'pointer' }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            CIN
+                                            {sortField === 'cin' && (
+                                                sortOrder === 'asc' ?
+                                                    <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
+                                                    <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={() => handleSort('ifValue')}
+                                        sx={{ cursor: 'pointer' }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            IF
+                                            {sortField === 'ifValue' && (
+                                                sortOrder === 'asc' ?
+                                                    <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
+                                                    <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={() => handleSort('type')}
+                                        sx={{ cursor: 'pointer' }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            Type
+                                            {sortField === 'type' && (
+                                                sortOrder === 'asc' ?
+                                                    <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
+                                                    <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={() => handleSort('status')}
+                                        sx={{ cursor: 'pointer' }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            Statut
+                                            {sortField === 'status' && (
+                                                sortOrder === 'asc' ?
+                                                    <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
+                                                    <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            )}
+                                        </Box>
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={() => handleSort('createdAt')}
+                                        sx={{ cursor: 'pointer' }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            Date Création
+                                            {sortField === 'createdAt' && (
+                                                sortOrder === 'asc' ?
+                                                    <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
+                                                    <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
+                                            )}
+                                        </Box>
+                                    </TableCell>
                                     <TableCell align="center">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
