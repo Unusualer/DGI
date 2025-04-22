@@ -341,9 +341,45 @@ function RequestList() {
 
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
-            <Typography variant="h4" gutterBottom>
-                Liste des Demandes
-            </Typography>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+                <Typography variant="h4">
+                    Liste des Demandes
+                </Typography>
+                <Box sx={{ display: "flex", gap: 2 }}>
+                    {(currentUser?.role === "ROLE_FRONTDESK" || currentUser?.role === "ROLE_MANAGER") && (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => navigate("/create-request")}
+                        >
+                            Nouvelle Demande
+                        </Button>
+                    )}
+
+                    {currentUser?.role === "ROLE_FRONTDESK" && (
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={handleProcessTodayRequests}
+                            disabled={processingRequests}
+                        >
+                            {processingRequests ? 'Traitement...' : 'Traiter les demandes du jour'}
+                        </Button>
+                    )}
+
+                    {currentUser?.role === "ROLE_MANAGER" && (
+                        <Button
+                            variant="contained"
+                            color="success"
+                            startIcon={<FileDownloadIcon />}
+                            onClick={handleExportToExcel}
+                            disabled={exporting || loading}
+                        >
+                            {exporting ? 'Exportation...' : 'Exporter Excel'}
+                        </Button>
+                    )}
+                </Box>
+            </Box>
 
             {error && (
                 <Alert severity="error" sx={{ mb: 2 }}>
@@ -357,150 +393,123 @@ function RequestList() {
                 </Alert>
             )}
 
-            {/* Basic search and filters */}
-            <Box sx={{ display: "flex", mb: 2, flexWrap: "wrap", gap: 2, alignItems: "center" }}>
-                <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1, maxWidth: 400 }}>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        label="Recherche par CIN, IF ou ICE"
-                        variant="outlined"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        sx={{ mr: 1 }}
-                    />
-                    <SearchIcon color="action" />
-                </Box>
-
-                <Button
-                    variant="outlined"
-                    startIcon={showFilters ? <ClearIcon /> : <FilterAltIcon />}
-                    onClick={toggleFilters}
-                    sx={{ minWidth: 140 }}
-                >
-                    {showFilters ? "Masquer filtres" : "Plus de filtres"}
-                </Button>
-
-                {(currentUser?.role === "ROLE_FRONTDESK" || currentUser?.role === "ROLE_MANAGER") && (
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => navigate("/create-request")}
-                    >
-                        Nouvelle Demande
-                    </Button>
-                )}
-
-                {currentUser?.role === "ROLE_FRONTDESK" && (
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        onClick={handleProcessTodayRequests}
-                        disabled={processingRequests}
-                    >
-                        {processingRequests ? 'Traitement...' : 'Traiter les demandes du jour'}
-                    </Button>
-                )}
-
-                {currentUser?.role === "ROLE_MANAGER" && (
-                    <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<FileDownloadIcon />}
-                        onClick={handleExportToExcel}
-                        disabled={exporting || loading}
-                    >
-                        {exporting ? 'Exportation...' : 'Exporter Excel'}
-                    </Button>
-                )}
-            </Box>
-
-            {/* Advanced filters section */}
-            {showFilters && (
-                <Paper sx={{ p: 2, mb: 3 }}>
-                    <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} sm={6} md={3} lg={2}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel id="status-filter-label">Statut</InputLabel>
-                                <Select
-                                    labelId="status-filter-label"
-                                    value={statusFilter}
-                                    label="Statut"
-                                    onChange={handleStatusFilterChange}
-                                >
-                                    <MenuItem value="Tous">Tous</MenuItem>
-                                    <MenuItem value="NOUVEAU">Nouveau</MenuItem>
-                                    <MenuItem value="EN_TRAITEMENT">En Traitement</MenuItem>
-                                    <MenuItem value="TRAITE">Traité</MenuItem>
-                                    <MenuItem value="REJETE">Rejeté</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6} md={3} lg={2}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel id="type-filter-label">Type</InputLabel>
-                                <Select
-                                    labelId="type-filter-label"
-                                    value={typeFilter}
-                                    label="Type"
-                                    onChange={handleTypeFilterChange}
-                                >
-                                    <MenuItem value="Tous">Tous</MenuItem>
-                                    <MenuItem value="PP">Personne Physique</MenuItem>
-                                    <MenuItem value="PM">Personne Morale</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6} md={3} lg={2}>
-                            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-                                <DatePicker
-                                    label="Date de début"
-                                    value={startDate}
-                                    onChange={handleStartDateChange}
-                                    slotProps={{
-                                        textField: {
-                                            size: 'small',
-                                            fullWidth: true,
-                                            variant: 'outlined'
-                                        }
-                                    }}
-                                />
-                            </LocalizationProvider>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6} md={3} lg={2}>
-                            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-                                <DatePicker
-                                    label="Date de fin"
-                                    value={endDate}
-                                    onChange={handleEndDateChange}
-                                    slotProps={{
-                                        textField: {
-                                            size: 'small',
-                                            fullWidth: true,
-                                            variant: 'outlined'
-                                        }
-                                    }}
-                                />
-                            </LocalizationProvider>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6} md={3} lg={2}>
-                            <Button
-                                variant="outlined"
-                                color="secondary"
-                                onClick={handleClearFilters}
-                                startIcon={<ClearIcon />}
+            {/* Search and Basic Filters */}
+            <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={6} md={6}>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <TextField
                                 fullWidth
-                            >
-                                Effacer filtres
-                            </Button>
-                        </Grid>
+                                size="small"
+                                label="Recherche par CIN, IF ou ICE"
+                                variant="outlined"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                sx={{ mr: 1 }}
+                            />
+                            <SearchIcon color="action" />
+                        </Box>
                     </Grid>
-                </Paper>
-            )}
+
+                    <Grid item xs={12} sm={6} md={4}>
+                        <FormControl size="small" fullWidth>
+                            <InputLabel id="status-filter-label">Statut</InputLabel>
+                            <Select
+                                labelId="status-filter-label"
+                                value={statusFilter}
+                                label="Statut"
+                                onChange={handleStatusFilterChange}
+                            >
+                                <MenuItem value="Tous">Tous</MenuItem>
+                                <MenuItem value="NOUVEAU">Nouveau</MenuItem>
+                                <MenuItem value="EN_TRAITEMENT">En Traitement</MenuItem>
+                                <MenuItem value="TRAITE">Traité</MenuItem>
+                                <MenuItem value="REJETE">Rejeté</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={2}>
+                        <Button
+                            variant="outlined"
+                            startIcon={showFilters ? <ClearIcon /> : <FilterAltIcon />}
+                            onClick={toggleFilters}
+                            fullWidth
+                        >
+                            {showFilters ? "Masquer" : "Plus de filtres"}
+                        </Button>
+                    </Grid>
+                </Grid>
+
+                {/* Advanced Filters */}
+                {showFilters && (
+                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e0e0e0' }}>
+                        <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} sm={6} md={3}>
+                                <FormControl size="small" fullWidth>
+                                    <InputLabel id="type-filter-label">Type</InputLabel>
+                                    <Select
+                                        labelId="type-filter-label"
+                                        value={typeFilter}
+                                        label="Type"
+                                        onChange={handleTypeFilterChange}
+                                    >
+                                        <MenuItem value="Tous">Tous</MenuItem>
+                                        <MenuItem value="PP">Personne Physique</MenuItem>
+                                        <MenuItem value="PM">Personne Morale</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+
+                            <Grid item xs={12} sm={6} md={3}>
+                                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+                                    <DatePicker
+                                        label="Date de début"
+                                        value={startDate}
+                                        onChange={handleStartDateChange}
+                                        slotProps={{
+                                            textField: {
+                                                size: 'small',
+                                                fullWidth: true,
+                                                variant: 'outlined'
+                                            }
+                                        }}
+                                    />
+                                </LocalizationProvider>
+                            </Grid>
+
+                            <Grid item xs={12} sm={6} md={3}>
+                                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+                                    <DatePicker
+                                        label="Date de fin"
+                                        value={endDate}
+                                        onChange={handleEndDateChange}
+                                        slotProps={{
+                                            textField: {
+                                                size: 'small',
+                                                fullWidth: true,
+                                                variant: 'outlined'
+                                            }
+                                        }}
+                                    />
+                                </LocalizationProvider>
+                            </Grid>
+
+                            <Grid item xs={12} sm={6} md={3}>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    startIcon={<ClearIcon />}
+                                    onClick={handleClearFilters}
+                                    fullWidth
+                                >
+                                    Effacer filtres
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                )}
+            </Paper>
 
             {filteredRequests.length > 0 ? (
                 <Paper sx={{ width: "100%", overflow: "hidden" }}>

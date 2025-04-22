@@ -25,6 +25,9 @@ import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import EditRequest from "./pages/EditRequest";
+import AttestationList from "./pages/AttestationList";
+import AttestationDetail from "./pages/AttestationDetail";
+import CreateAttestation from "./pages/CreateAttestation";
 
 const theme = createTheme({
     palette: {
@@ -252,6 +255,35 @@ function App() {
                         />
 
                         <Route path="/track-request" element={<TrackRequest />} />
+
+                        {/* Attestation Routes */}
+                        <Route
+                            path="/attestation-list"
+                            element={
+                                <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER"]}>
+                                    <AttestationList />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="/attestation/:id"
+                            element={
+                                <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER"]}>
+                                    <AttestationDetail />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="/create-attestation"
+                            element={
+                                <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER"]}>
+                                    <CreateAttestation />
+                                </ProtectedRoute>
+                            }
+                        />
+
                         <Route path="*" element={<NotFound />} />
                     </Routes>
                 </Box>

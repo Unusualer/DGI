@@ -13,7 +13,6 @@ import {
 import {
     Menu as MenuIcon,
     AccountCircle,
-    Notifications,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 
@@ -71,7 +70,7 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                     component="div"
                     sx={{ flexGrow: 1, display: { xs: "none", sm: "block" } }}
                 >
-                    Gestion des Demandes DGI
+                    Gestion DGI
                 </Typography>
 
                 {currentUser ? (
@@ -86,19 +85,6 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                         </Button>
 
                         {(currentUser.role === "ROLE_FRONTDESK" ||
-                            currentUser.role === "ROLE_MANAGER" ||
-                            currentUser.role === "ROLE_PROCESSING") && (
-                                <Button
-                                    component={Link}
-                                    to="/create-request"
-                                    color="inherit"
-                                    sx={{ ml: 1, display: { xs: "none", md: "block" } }}
-                                >
-                                    Nouvelle Demande
-                                </Button>
-                            )}
-
-                        {(currentUser.role === "ROLE_FRONTDESK" ||
                             currentUser.role === "ROLE_PROCESSING" ||
                             currentUser.role === "ROLE_MANAGER") && (
                                 <Button
@@ -111,16 +97,17 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                                 </Button>
                             )}
 
-                        {currentUser.role === "ROLE_MANAGER" && (
-                            <Button
-                                component={Link}
-                                to="/dashboard"
-                                color="inherit"
-                                sx={{ ml: 1, display: { xs: "none", md: "block" } }}
-                            >
-                                Tableau de Bord
-                            </Button>
-                        )}
+                        {(currentUser.role === "ROLE_FRONTDESK" ||
+                            currentUser.role === "ROLE_MANAGER") && (
+                                <Button
+                                    component={Link}
+                                    to="/attestation-list"
+                                    color="inherit"
+                                    sx={{ ml: 1, display: { xs: "none", md: "block" } }}
+                                >
+                                    Attestations
+                                </Button>
+                            )}
 
                         {currentUser.role === "ROLE_ADMIN" && (
                             <Button

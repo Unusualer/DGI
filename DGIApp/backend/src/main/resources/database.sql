@@ -36,6 +36,21 @@ CREATE TABLE IF NOT EXISTS requests (
     agent_id BIGINT REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS attestations (
+    id SERIAL PRIMARY KEY,
+    IF VARCHAR(255) NOT NULL,
+    cin VARCHAR(255) NOT NULL,
+    nom VARCHAR(255) NOT NULL,
+    prenom VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    phone VARCHAR(255),
+    type VARCHAR(255) NOT NULL,
+    status VARCHAR(255) NOT NULL DEFAULT 'déposé',
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP,
+    creator_id BIGINT NOT NULL REFERENCES users(id)
+);
+
 -- Data initialization (default users, will only be inserted if they don't exist)
 DO $$
 BEGIN
@@ -61,6 +76,18 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM users WHERE username = 'frontdesk') THEN
         INSERT INTO users (username, email, password, role) 
         VALUES ('frontdesk', 'frontdesk@example.com', '$2a$10$TM3PAYG3b.H98cbRrHqWa.BM7YyCqV92e/kUTBfj85AjayxGZU7d6', 'ROLE_FRONTDESK');
+    END IF;
+END
+$$;
+
+-- Add status column to attestations table if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'attestations' AND column_name = 'status'
+    ) THEN
+        ALTER TABLE attestations ADD COLUMN status VARCHAR(255) NOT NULL DEFAULT 'déposé';
     END IF;
 END
 $$; 

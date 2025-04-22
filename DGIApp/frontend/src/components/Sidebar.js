@@ -19,6 +19,7 @@ import {
     Search as SearchIcon,
     People as PeopleIcon,
     Home as HomeIcon,
+    Description as DescriptionIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 
@@ -62,6 +63,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
             <Divider />
 
             <List>
+                {/* Accueil - Home */}
                 <ListItem
                     disablePadding
                     sx={{
@@ -91,7 +93,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                     </ListItemButton>
                 </ListItem>
 
-                {/* Show dashboard link only for managers */}
+                {/* Dashboard for MANAGER */}
                 {currentUser && currentUser.role === "ROLE_MANAGER" && (
                     <ListItem
                         disablePadding
@@ -127,7 +129,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                     </ListItem>
                 )}
 
-                {/* Show requests list link for frontdesk, processing, and manager */}
+                {/* Demandes - Requests */}
                 {currentUser &&
                     (currentUser.role === "ROLE_FRONTDESK" ||
                         currentUser.role === "ROLE_PROCESSING" ||
@@ -166,7 +168,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                         </ListItem>
                     )}
 
-                {/* Show create request link for frontdesk, manager, and processing */}
+                {/* Create Request */}
                 {currentUser &&
                     (currentUser.role === "ROLE_FRONTDESK" ||
                         currentUser.role === "ROLE_MANAGER" ||
@@ -207,7 +209,87 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                         </ListItem>
                     )}
 
-                {/* Show user management link for admin */}
+                {/* Attestations */}
+                {currentUser &&
+                    (currentUser.role === "ROLE_FRONTDESK" ||
+                        currentUser.role === "ROLE_MANAGER") && (
+                        <ListItem
+                            disablePadding
+                            sx={{
+                                display: "block",
+                                backgroundColor:
+                                    location.pathname === "/attestation-list"
+                                        ? "#f0f0f0"
+                                        : "inherit",
+                            }}
+                        >
+                            <ListItemButton
+                                component={Link}
+                                to="/attestation-list"
+                                sx={{
+                                    minHeight: 48,
+                                    justifyContent: open ? "initial" : "center",
+                                    px: 2.5,
+                                }}
+                            >
+                                <ListItemIcon
+                                    sx={{
+                                        minWidth: 0,
+                                        mr: open ? 3 : "auto",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <DescriptionIcon />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Attestations"
+                                    sx={{ opacity: open ? 1 : 0 }}
+                                />
+                            </ListItemButton>
+                        </ListItem>
+                    )}
+
+                {/* Create Attestation */}
+                {currentUser &&
+                    (currentUser.role === "ROLE_FRONTDESK" ||
+                        currentUser.role === "ROLE_MANAGER") && (
+                        <ListItem
+                            disablePadding
+                            sx={{
+                                display: "block",
+                                backgroundColor:
+                                    location.pathname === "/create-attestation"
+                                        ? "#f0f0f0"
+                                        : "inherit",
+                            }}
+                        >
+                            <ListItemButton
+                                component={Link}
+                                to="/create-attestation"
+                                sx={{
+                                    minHeight: 48,
+                                    justifyContent: open ? "initial" : "center",
+                                    px: 2.5,
+                                }}
+                            >
+                                <ListItemIcon
+                                    sx={{
+                                        minWidth: 0,
+                                        mr: open ? 3 : "auto",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <AddIcon />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Nouvelle Attestation"
+                                    sx={{ opacity: open ? 1 : 0 }}
+                                />
+                            </ListItemButton>
+                        </ListItem>
+                    )}
+
+                {/* Admin - User Management */}
                 {currentUser && currentUser.role === "ROLE_ADMIN" && (
                     <ListItem
                         disablePadding
@@ -235,14 +317,14 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                             >
                                 <PeopleIcon />
                             </ListItemIcon>
-                            <ListItemText primary="Utilisateurs" sx={{ opacity: open ? 1 : 0 }} />
+                            <ListItemText
+                                primary="Utilisateurs"
+                                sx={{ opacity: open ? 1 : 0 }}
+                            />
                         </ListItemButton>
                     </ListItem>
                 )}
             </List>
-
-            <Box sx={{ flexGrow: 1 }} />
-            <Divider />
         </Drawer>
     );
 }

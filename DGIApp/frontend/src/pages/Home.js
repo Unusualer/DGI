@@ -9,12 +9,13 @@ import {
     CardContent,
     Grid,
     Paper,
+    Divider,
 } from "@mui/material";
 import {
     Dashboard as DashboardIcon,
     Assignment as AssignmentIcon,
     AddCircle as AddCircleIcon,
-    Search as SearchIcon,
+    Description as DescriptionIcon,
     People as PeopleIcon,
 } from "@mui/icons-material";
 import AuthService from "../services/auth.service";
@@ -31,7 +32,7 @@ function Home() {
 
     const getWelcomeMessage = () => {
         if (!currentUser) {
-            return "Bienvenue au Système de Gestion des Demandes DGI";
+            return "Bienvenue au Système de Gestion DGI";
         }
 
         let roleName = currentUser.role.replace("ROLE_", "");
@@ -55,7 +56,7 @@ function Home() {
                 >
                     <Typography variant="body1" paragraph>
                         Cette application permet aux utilisateurs de soumettre des demandes, de suivre leur
-                        progression à travers différents états et de gérer la propriété des demandes.
+                        progression à travers différents états et de gérer les attestations.
                     </Typography>
 
                     {!currentUser && (
@@ -78,7 +79,7 @@ function Home() {
 
                 {currentUser && (
                     <Grid container spacing={3}>
-                        {/* Dashboard Card - Manager Only */}
+                        {/* Tableau de Bord Card - Manager Only */}
                         {currentUser.role === "ROLE_MANAGER" && (
                             <Grid item xs={12} sm={6} md={4}>
                                 <Card sx={{ height: "100%" }}>
@@ -105,6 +106,7 @@ function Home() {
                                                 component={Link}
                                                 to="/dashboard"
                                                 variant="contained"
+                                                fullWidth
                                             >
                                                 Accéder au Tableau de Bord
                                             </Button>
@@ -114,7 +116,7 @@ function Home() {
                             </Grid>
                         )}
 
-                        {/* Requests List Card - Frontdesk, Processing, Manager */}
+                        {/* Demandes Card - Frontdesk, Processing, Manager */}
                         {(currentUser.role === "ROLE_FRONTDESK" ||
                             currentUser.role === "ROLE_PROCESSING" ||
                             currentUser.role === "ROLE_MANAGER") && (
@@ -143,8 +145,19 @@ function Home() {
                                                     component={Link}
                                                     to="/requests"
                                                     variant="contained"
+                                                    fullWidth
                                                 >
                                                     Voir les Demandes
+                                                </Button>
+                                                <Divider sx={{ my: 2, width: '100%' }} />
+                                                <Button
+                                                    component={Link}
+                                                    to="/create-request"
+                                                    variant="outlined"
+                                                    fullWidth
+                                                    startIcon={<AddCircleIcon />}
+                                                >
+                                                    Nouvelle Demande
                                                 </Button>
                                             </Box>
                                         </CardContent>
@@ -152,10 +165,10 @@ function Home() {
                                 </Grid>
                             )}
 
-                        {/* Create Request Card - Frontdesk, Manager, Processing */}
+                        {/* Attestations Card - Frontdesk, Processing, Manager */}
                         {(currentUser.role === "ROLE_FRONTDESK" ||
-                            currentUser.role === "ROLE_MANAGER" ||
-                            currentUser.role === "ROLE_PROCESSING") && (
+                            currentUser.role === "ROLE_PROCESSING" ||
+                            currentUser.role === "ROLE_MANAGER") && (
                                 <Grid item xs={12} sm={6} md={4}>
                                     <Card sx={{ height: "100%" }}>
                                         <CardContent>
@@ -167,22 +180,33 @@ function Home() {
                                                     textAlign: "center",
                                                 }}
                                             >
-                                                <AddCircleIcon
+                                                <DescriptionIcon
                                                     color="primary"
                                                     sx={{ fontSize: 60, mb: 2 }}
                                                 />
                                                 <Typography variant="h6" gutterBottom>
-                                                    Nouvelle Demande
+                                                    Attestations
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ mb: 2 }}>
-                                                    Soumettez une nouvelle demande au système
+                                                    Gérez les attestations et certificats
                                                 </Typography>
                                                 <Button
                                                     component={Link}
-                                                    to="/create-request"
+                                                    to="/attestation-list"
                                                     variant="contained"
+                                                    fullWidth
                                                 >
-                                                    Créer une Demande
+                                                    Voir les Attestations
+                                                </Button>
+                                                <Divider sx={{ my: 2, width: '100%' }} />
+                                                <Button
+                                                    component={Link}
+                                                    to="/create-attestation"
+                                                    variant="outlined"
+                                                    fullWidth
+                                                    startIcon={<AddCircleIcon />}
+                                                >
+                                                    Nouvelle Attestation
                                                 </Button>
                                             </Box>
                                         </CardContent>
@@ -217,6 +241,7 @@ function Home() {
                                                 component={Link}
                                                 to="/users"
                                                 variant="contained"
+                                                fullWidth
                                             >
                                                 Gérer les Utilisateurs
                                             </Button>
