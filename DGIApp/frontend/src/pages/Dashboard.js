@@ -12,7 +12,12 @@ import {
     Tab,
     Tabs,
     Divider,
-    useTheme
+    useTheme,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Button
 } from "@mui/material";
 import {
     ReceiptLong as ReceiptIcon,
@@ -20,8 +25,13 @@ import {
     AssignmentTurnedIn as CompletedIcon,
     DoNotDisturb as RejectedIcon,
     Pending as PendingIcon,
-    Article as NewIcon
+    Article as NewIcon,
+    CalendarMonth as CalendarIcon
 } from "@mui/icons-material";
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import fr from 'date-fns/locale/fr';
 import AuthService from "../services/auth.service";
 import RequestService from "../services/request.service";
 import AttestationService from "../services/attestation.service";
@@ -70,6 +80,15 @@ function Dashboard() {
         byType: {}
     });
 
+    // Time filter states
+    const [timeFilter, setTimeFilter] = useState("all");
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
+    const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+    const [showMonthPicker, setShowMonthPicker] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
     useEffect(() => {
         const user = AuthService.getCurrentUser();
         if (user) {
@@ -81,8 +100,95 @@ function Dashboard() {
         }
     }, []);
 
+    // Re-fetch data when time filter changes
+    useEffect(() => {
+        if (currentUser) {
+            fetchRequestStats();
+            fetchAttestationStats();
+        }
+    }, [timeFilter, startDate, endDate, selectedMonth, selectedYear]);
+
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
+    };
+
+    const handleTimeFilterChange = (event) => {
+        const value = event.target.value;
+        setTimeFilter(value);
+
+        // Reset custom date range when selecting a predefined filter
+        if (value !== "custom") {
+            setShowCustomDatePicker(false);
+        } else {
+            setShowCustomDatePicker(true);
+        }
+
+        // Show/hide month picker
+        if (value === "by_month") {
+            setShowMonthPicker(true);
+        } else {
+            setShowMonthPicker(false);
+        }
+    };
+
+    const handleMonthChange = (event) => {
+        setSelectedMonth(parseInt(event.target.value));
+    };
+
+    const handleYearChange = (event) => {
+        setSelectedYear(parseInt(event.target.value));
+    };
+
+    // Set start and end dates based on selected time filter
+    const getFilterDates = () => {
+        const now = new Date();
+        let filterStartDate = null;
+        let filterEndDate = new Date(now);
+
+        switch (timeFilter) {
+            case "today":
+                // Start of today
+                filterStartDate = new Date(now);
+                filterStartDate.setHours(0, 0, 0, 0);
+                break;
+            case "this_month":
+                // Start of current month
+                filterStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                break;
+            case "last_30_days":
+                // 30 days ago
+                filterStartDate = new Date(now);
+                filterStartDate.setDate(now.getDate() - 30);
+                break;
+            case "last_7_days":
+                // 7 days ago
+                filterStartDate = new Date(now);
+                filterStartDate.setDate(now.getDate() - 7);
+                break;
+            case "by_month":
+                // First day of selected month
+                filterStartDate = new Date(selectedYear, selectedMonth, 1);
+                // Last day of selected month
+                filterEndDate = new Date(selectedYear, parseInt(selectedMonth) + 1, 0, 23, 59, 59, 999);
+                break;
+            case "custom":
+                // Use custom date range if both dates are set
+                if (startDate && endDate) {
+                    filterStartDate = new Date(startDate);
+                    filterEndDate = new Date(endDate);
+                    filterEndDate.setHours(23, 59, 59, 999);
+                }
+                break;
+            default:
+                // "all" or any other value - no date filtering
+                return { startDate: null, endDate: null };
+        }
+
+        if (filterStartDate) {
+            filterStartDate.setHours(0, 0, 0, 0);
+        }
+
+        return { startDate: filterStartDate, endDate: filterEndDate };
     };
 
     const fetchRequestStats = async () => {
@@ -90,14 +196,23 @@ function Dashboard() {
             const response = await RequestService.getAllRequestsForTracking();
 
             if (response && response.data) {
-                const requests = response.data;
+                const { startDate: filterStart, endDate: filterEnd } = getFilterDates();
+
+                // Filter requests by date if time filter is active
+                let filteredRequests = response.data;
+                if (filterStart && filterEnd) {
+                    filteredRequests = response.data.filter(req => {
+                        const reqDate = new Date(req.createdAt);
+                        return reqDate >= filterStart && reqDate <= filterEnd;
+                    });
+                }
 
                 const stats = {
-                    total: requests.length,
-                    nouveau: requests.filter(req => req.etat === "NOUVEAU").length,
-                    enTraitement: requests.filter(req => req.etat === "EN_TRAITEMENT").length,
-                    traite: requests.filter(req => req.etat === "TRAITE").length,
-                    rejete: requests.filter(req => req.etat === "REJETE").length
+                    total: filteredRequests.length,
+                    nouveau: filteredRequests.filter(req => req.etat === "NOUVEAU").length,
+                    enTraitement: filteredRequests.filter(req => req.etat === "EN_TRAITEMENT").length,
+                    traite: filteredRequests.filter(req => req.etat === "TRAITE").length,
+                    rejete: filteredRequests.filter(req => req.etat === "REJETE").length
                 };
 
                 setRequestStats(stats);
@@ -112,15 +227,24 @@ function Dashboard() {
             const response = await AttestationService.getAllAttestationsForTracking();
 
             if (response) {
-                const attestations = response;
+                const { startDate: filterStart, endDate: filterEnd } = getFilterDates();
+
+                // Filter attestations by date if time filter is active
+                let filteredAttestations = response;
+                if (filterStart && filterEnd) {
+                    filteredAttestations = response.filter(att => {
+                        const attDate = new Date(att.createdAt);
+                        return attDate >= filterStart && attDate <= filterEnd;
+                    });
+                }
 
                 // Count by status
-                const deposé = attestations.filter(att => att.status === "déposé").length;
-                const livré = attestations.filter(att => att.status === "livré").length;
+                const deposé = filteredAttestations.filter(att => att.status === "déposé").length;
+                const livré = filteredAttestations.filter(att => att.status === "livré").length;
 
                 // Count by type
                 const typeCount = {};
-                attestations.forEach(att => {
+                filteredAttestations.forEach(att => {
                     const type = att.type;
                     if (!typeCount[type]) {
                         typeCount[type] = 0;
@@ -129,7 +253,7 @@ function Dashboard() {
                 });
 
                 setAttestationStats({
-                    total: attestations.length,
+                    total: filteredAttestations.length,
                     déposé: deposé,
                     livré: livré,
                     byType: typeCount
@@ -274,6 +398,116 @@ function Dashboard() {
                 </Typography>
 
                 <Divider sx={{ mb: 3 }} />
+
+                {/* Time filter controls */}
+                <Paper sx={{ p: 2, mb: 4, borderRadius: 2, bgcolor: theme.palette.background.default }}>
+                    <Grid container spacing={2} alignItems="center">
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 0 } }}>
+                                <CalendarIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
+                                <Typography variant="subtitle1" fontWeight="bold">
+                                    Filtre par période
+                                </Typography>
+                            </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Période</InputLabel>
+                                <Select
+                                    value={timeFilter}
+                                    label="Période"
+                                    onChange={handleTimeFilterChange}
+                                >
+                                    <MenuItem value="all">Toutes les données</MenuItem>
+                                    <MenuItem value="today">Aujourd'hui</MenuItem>
+                                    <MenuItem value="this_month">Ce mois-ci</MenuItem>
+                                    <MenuItem value="last_30_days">Derniers 30 jours</MenuItem>
+                                    <MenuItem value="last_7_days">Derniers 7 jours</MenuItem>
+                                    <MenuItem value="by_month">Par mois</MenuItem>
+                                    <MenuItem value="custom">Période personnalisée</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
+                        {showMonthPicker && (
+                            <>
+                                <Grid item xs={12} sm={6} md={3}>
+                                    <FormControl fullWidth size="small">
+                                        <InputLabel>Mois</InputLabel>
+                                        <Select
+                                            value={selectedMonth}
+                                            label="Mois"
+                                            onChange={handleMonthChange}
+                                        >
+                                            <MenuItem value={0}>Janvier</MenuItem>
+                                            <MenuItem value={1}>Février</MenuItem>
+                                            <MenuItem value={2}>Mars</MenuItem>
+                                            <MenuItem value={3}>Avril</MenuItem>
+                                            <MenuItem value={4}>Mai</MenuItem>
+                                            <MenuItem value={5}>Juin</MenuItem>
+                                            <MenuItem value={6}>Juillet</MenuItem>
+                                            <MenuItem value={7}>Août</MenuItem>
+                                            <MenuItem value={8}>Septembre</MenuItem>
+                                            <MenuItem value={9}>Octobre</MenuItem>
+                                            <MenuItem value={10}>Novembre</MenuItem>
+                                            <MenuItem value={11}>Décembre</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={12} sm={6} md={3}>
+                                    <FormControl fullWidth size="small">
+                                        <InputLabel>Année</InputLabel>
+                                        <Select
+                                            value={selectedYear}
+                                            label="Année"
+                                            onChange={handleYearChange}
+                                        >
+                                            <MenuItem value={2022}>2022</MenuItem>
+                                            <MenuItem value={2023}>2023</MenuItem>
+                                            <MenuItem value={2024}>2024</MenuItem>
+                                            <MenuItem value={2025}>2025</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                            </>
+                        )}
+
+                        {showCustomDatePicker && (
+                            <>
+                                <Grid item xs={12} sm={6} md={3}>
+                                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+                                        <DatePicker
+                                            label="Date début"
+                                            value={startDate}
+                                            onChange={setStartDate}
+                                            slotProps={{
+                                                textField: {
+                                                    size: 'small',
+                                                    fullWidth: true
+                                                }
+                                            }}
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                                <Grid item xs={12} sm={6} md={3}>
+                                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+                                        <DatePicker
+                                            label="Date fin"
+                                            value={endDate}
+                                            onChange={setEndDate}
+                                            slotProps={{
+                                                textField: {
+                                                    size: 'small',
+                                                    fullWidth: true
+                                                }
+                                            }}
+                                        />
+                                    </LocalizationProvider>
+                                </Grid>
+                            </>
+                        )}
+                    </Grid>
+                </Paper>
 
                 {/* Summary Cards */}
                 <Grid container spacing={3} sx={{ mb: 4 }}>
