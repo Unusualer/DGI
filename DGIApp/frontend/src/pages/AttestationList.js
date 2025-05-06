@@ -171,7 +171,7 @@ function AttestationList() {
 
         // Create a new anchor element
         const link = document.createElement('a');
-        link.href = 'http://localhost:8080/api/attestations/exportExcel';
+        link.href = '/api/attestations/exportExcel';
         link.setAttribute('download', 'attestations.xlsx');
         link.setAttribute('target', '_blank');
         document.body.appendChild(link);

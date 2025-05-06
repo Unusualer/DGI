@@ -212,7 +212,8 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                 {/* Attestations */}
                 {currentUser &&
                     (currentUser.role === "ROLE_FRONTDESK" ||
-                        currentUser.role === "ROLE_MANAGER") && (
+                        currentUser.role === "ROLE_MANAGER" ||
+                        currentUser.role === "ROLE_PROCESSING") && (
                         <ListItem
                             disablePadding
                             sx={{
@@ -252,7 +253,8 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                 {/* Create Attestation */}
                 {currentUser &&
                     (currentUser.role === "ROLE_FRONTDESK" ||
-                        currentUser.role === "ROLE_MANAGER") && (
+                        currentUser.role === "ROLE_MANAGER" ||
+                        currentUser.role === "ROLE_PROCESSING") && (
                         <ListItem
                             disablePadding
                             sx={{

@@ -260,7 +260,7 @@ function App() {
                         <Route
                             path="/attestation-list"
                             element={
-                                <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER"]}>
+                                <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER", "ROLE_PROCESSING"]}>
                                     <AttestationList />
                                 </ProtectedRoute>
                             }
@@ -269,7 +269,7 @@ function App() {
                         <Route
                             path="/attestation/:id"
                             element={
-                                <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER"]}>
+                                <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER", "ROLE_PROCESSING"]}>
                                     <AttestationDetail />
                                 </ProtectedRoute>
                             }
@@ -278,7 +278,7 @@ function App() {
                         <Route
                             path="/create-attestation"
                             element={
-                                <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER"]}>
+                                <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER", "ROLE_PROCESSING"]}>
                                     <CreateAttestation />
                                 </ProtectedRoute>
                             }

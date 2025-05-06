@@ -98,6 +98,7 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                             )}
 
                         {(currentUser.role === "ROLE_FRONTDESK" ||
+                            currentUser.role === "ROLE_PROCESSING" ||
                             currentUser.role === "ROLE_MANAGER") && (
                                 <Button
                                     component={Link}

@@ -118,7 +118,7 @@ public class RequestController {
 
     // Create a new request - by FRONTDESK or MANAGER
     @PostMapping
-    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER') or hasRole('PROCESSING')")
     public ResponseEntity<?> createRequest(@Valid @RequestBody RequestCreateRequest createRequest) {
         try {
             // Debug security context information
@@ -960,5 +960,16 @@ public class RequestController {
             e.printStackTrace();
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    // Get requests in EN_TRAITEMENT status - for PROCESSING agents
+    @GetMapping("/processing-queue")
+    @PreAuthorize("hasRole('PROCESSING') or hasRole('MANAGER')")
+    public ResponseEntity<?> getProcessingQueue() {
+        List<Request> requests = requestRepository.findByEtat("EN_TRAITEMENT");
+        List<RequestResponse> dtos = requests.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
     Container,
     Typography,
@@ -44,6 +44,7 @@ import AuthService from "../services/auth.service";
 
 function RequestList() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -70,8 +71,15 @@ function RequestList() {
         const user = AuthService.getCurrentUser();
         setCurrentUser(user);
 
+        // Check if there's a status parameter in the URL
+        const params = new URLSearchParams(location.search);
+        const statusParam = params.get('status');
+        if (statusParam) {
+            setStatusFilter(statusParam);
+        }
+
         fetchRequests();
-    }, []);
+    }, [location.search]);
 
     const fetchRequests = async () => {
         setLoading(true);
@@ -236,13 +244,36 @@ function RequestList() {
             });
     };
 
+    const handleProcessingQueue = () => {
+        setLoading(true);
+        setError(null);
+
+        RequestService.getProcessingQueue()
+            .then(response => {
+                if (response && response.data) {
+                    setRequests(response.data);
+                    setStatusFilter("EN_TRAITEMENT");
+                    setSuccessMessage("Demandes en attente de traitement chargées");
+                } else {
+                    setError("Aucune donnée reçue du serveur");
+                }
+            })
+            .catch(err => {
+                console.error("Error fetching processing queue:", err);
+                setError("Erreur lors du chargement des demandes à traiter");
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    };
+
     const handleExportToExcel = () => {
         setExporting(true);
         setError(null);
 
         // Create a new anchor element
         const link = document.createElement('a');
-        link.href = 'http://localhost:8080/api/requests/exportExcel';
+        link.href = '/api/requests/exportExcel';
         link.setAttribute('download', 'requests.xlsx');
         link.setAttribute('target', '_blank');
         document.body.appendChild(link);
@@ -433,7 +464,7 @@ function RequestList() {
                     Liste des Demandes
                 </Typography>
                 <Box sx={{ display: "flex", gap: 2 }}>
-                    {(currentUser?.role === "ROLE_FRONTDESK" || currentUser?.role === "ROLE_MANAGER") && (
+                    {(currentUser?.role === "ROLE_FRONTDESK" || currentUser?.role === "ROLE_MANAGER" || currentUser?.role === "ROLE_PROCESSING") && (
                         <Button
                             variant="contained"
                             color="primary"
@@ -449,18 +480,31 @@ function RequestList() {
                             color="secondary"
                             onClick={handleProcessTodayRequests}
                             disabled={processingRequests}
+                            sx={{ ml: 1 }}
                         >
                             {processingRequests ? 'Traitement...' : 'Traiter les demandes du jour'}
                         </Button>
                     )}
 
-                    {currentUser?.role === "ROLE_MANAGER" && (
+                    {currentUser?.role === "ROLE_PROCESSING" && (
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={handleProcessingQueue}
+                            sx={{ ml: 1 }}
+                        >
+                            Traiter les demandes en attente
+                        </Button>
+                    )}
+
+                    {(currentUser?.role === "ROLE_MANAGER" || currentUser?.role === "ROLE_FRONTDESK" || currentUser?.role === "ROLE_PROCESSING") && (
                         <Button
                             variant="contained"
                             color="success"
                             startIcon={<FileDownloadIcon />}
                             onClick={handleExportToExcel}
                             disabled={exporting || loading}
+                            sx={{ ml: 1 }}
                         >
                             {exporting ? 'Exportation...' : 'Exporter Excel'}
                         </Button>

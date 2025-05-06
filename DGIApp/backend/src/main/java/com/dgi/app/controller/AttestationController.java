@@ -96,7 +96,7 @@ public class AttestationController {
 
     // Create a new attestation - FRONTDESK or MANAGER can create
     @PostMapping("/create")
-    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER') or hasRole('PROCESSING')")
     public ResponseEntity<?> createAttestation(@Valid @RequestBody AttestationCreateRequest createRequest) {
         try {
             // Get current authenticated user
@@ -140,7 +140,7 @@ public class AttestationController {
 
     // Get all attestations for tracking - available to all roles that need it
     @GetMapping("/track")
-    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER') or hasRole('PROCESSING')")
     public ResponseEntity<?> getAllAttestationsForTracking() {
         List<Attestation> attestations = attestationRepository.findAll();
         List<AttestationResponse> dtos = attestations.stream()
@@ -151,7 +151,7 @@ public class AttestationController {
 
     // Get attestations created by current FRONTDESK agent
     @GetMapping("/my-attestations")
-    @PreAuthorize("hasRole('FRONTDESK')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('PROCESSING')")
     public ResponseEntity<?> getMyAttestations() {
         User currentUser = getCurrentUser();
         List<Attestation> attestations = attestationRepository.findByCreator(currentUser);
@@ -163,7 +163,7 @@ public class AttestationController {
 
     // Get attestations by type
     @GetMapping("/type/{type}")
-    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER') or hasRole('PROCESSING')")
     public ResponseEntity<?> getAttestationsByType(@PathVariable String type) {
         List<Attestation> attestations = attestationRepository.findByType(type);
         List<AttestationResponse> dtos = attestations.stream()
@@ -174,7 +174,7 @@ public class AttestationController {
 
     // Search attestations by name
     @GetMapping("/search/nom")
-    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER') or hasRole('PROCESSING')")
     public ResponseEntity<?> searchAttestationsByName(@RequestParam String query) {
         List<Attestation> attestations = attestationRepository.findByNomContainingIgnoreCase(query);
         List<AttestationResponse> dtos = attestations.stream()
@@ -185,7 +185,7 @@ public class AttestationController {
 
     // Search attestations by CIN
     @GetMapping("/search/cin")
-    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER') or hasRole('PROCESSING')")
     public ResponseEntity<?> searchAttestationsByCin(@RequestParam String query) {
         List<Attestation> attestations = attestationRepository.findByCinContainingIgnoreCase(query);
         List<AttestationResponse> dtos = attestations.stream()
@@ -196,7 +196,7 @@ public class AttestationController {
 
     // Get a single attestation by ID
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER') or hasRole('PROCESSING')")
     public ResponseEntity<?> getAttestationById(@PathVariable Long id) {
         Optional<Attestation> attestation = attestationRepository.findById(id);
         if (attestation.isPresent()) {
@@ -208,7 +208,7 @@ public class AttestationController {
 
     // Update attestation status to "livré"
     @PutMapping("/{id}/deliver")
-    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER') or hasRole('PROCESSING')")
     public ResponseEntity<?> markAttestationAsDelivered(@PathVariable Long id) {
         try {
             Optional<Attestation> attestationOpt = attestationRepository.findById(id);
@@ -233,7 +233,7 @@ public class AttestationController {
 
     // Generate receipt PDF for an attestation
     @GetMapping("/{id}/receipt")
-    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('FRONTDESK') or hasRole('MANAGER') or hasRole('PROCESSING')")
     public ResponseEntity<byte[]> generateAttestationReceipt(@PathVariable Long id) {
         try {
             // Find the attestation

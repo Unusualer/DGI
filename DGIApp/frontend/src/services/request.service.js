@@ -105,6 +105,11 @@ const bulkUpdateTodayRequests = async () => {
     return axios.put(API_URL + "bulk-update-today");
 };
 
+// Get processing queue (requests in EN_TRAITEMENT status)
+const getProcessingQueue = async () => {
+    return axios.get(API_URL + "processing-queue");
+};
+
 // Generate and download a receipt PDF
 const generateReceiptPdf = async (id) => {
     return axios.get(API_URL + id + "/receipt", { responseType: 'blob' });
@@ -161,6 +166,7 @@ const RequestService = {
     deleteRequest,
     editRequest,
     bulkUpdateTodayRequests,
+    getProcessingQueue,
     generateReceiptPdf,
     printReceipt
 };
