@@ -42,6 +42,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import fr from 'date-fns/locale/fr';
 import AttestationService from "../services/attestation.service";
+import TypeAttestationService from "../services/type-attestation.service";
 import AuthService from "../services/auth.service";
 
 function AttestationList() {
@@ -65,11 +66,43 @@ function AttestationList() {
     const [sortField, setSortField] = useState('id');
     const [sortOrder, setSortOrder] = useState('asc');
 
+    // Add state for attestation types
+    const [attestationTypes, setAttestationTypes] = useState([]);
+    const [typeLabelsMap, setTypeLabelsMap] = useState({});
+
     useEffect(() => {
         const user = AuthService.getCurrentUser();
         setCurrentUser(user);
         fetchAttestations();
+        fetchAttestationTypes();
     }, []);
+
+    const fetchAttestationTypes = async () => {
+        try {
+            const types = await TypeAttestationService.getAllTypes();
+            setAttestationTypes(types);
+
+            // Create a map of type codes to labels
+            const labelsMap = {};
+            types.forEach(type => {
+                const code = type.label
+                    .toLowerCase()
+                    .replace(/\s+/g, '_')
+                    .replace(/[^a-z0-9_]/g, '');
+                labelsMap[code] = type.label;
+            });
+
+            // Add the predefined types
+            labelsMap['revenu_globale'] = 'Revenu Globale';
+            labelsMap['tva_logement_social'] = 'TVA Logement Social';
+            labelsMap['renseignement_deces'] = 'Renseignement Décès';
+            labelsMap['depart_definitif'] = 'Départ Définitif';
+
+            setTypeLabelsMap(labelsMap);
+        } catch (err) {
+            console.error("Error fetching attestation types:", err);
+        }
+    };
 
     const fetchAttestations = async () => {
         setLoading(true);
@@ -186,8 +219,14 @@ function AttestationList() {
         }, 1000);
     };
 
-    const getTypeLabel = (type) => {
-        switch (type) {
+    const getTypeLabel = (typeCode) => {
+        // Check if we have the label in our map
+        if (typeLabelsMap[typeCode]) {
+            return typeLabelsMap[typeCode];
+        }
+
+        // Fallback to default handling for backward compatibility
+        switch (typeCode) {
             case 'revenu_globale':
                 return 'Revenu Globale';
             case 'tva_logement_social':
@@ -197,7 +236,7 @@ function AttestationList() {
             case 'depart_definitif':
                 return 'Départ Définitif';
             default:
-                return type;
+                return typeCode;
         }
     };
 
@@ -449,10 +488,30 @@ function AttestationList() {
                                         onChange={handleTypeFilterChange}
                                     >
                                         <MenuItem value="Tous">Tous</MenuItem>
+                                        {/* Static predefined types */}
                                         <MenuItem value="revenu_globale">Revenu Globale</MenuItem>
                                         <MenuItem value="tva_logement_social">TVA Logement Social</MenuItem>
                                         <MenuItem value="renseignement_deces">Renseignement Décès</MenuItem>
                                         <MenuItem value="depart_definitif">Départ Définitif</MenuItem>
+
+                                        {/* Dynamic custom types from type_attestations table */}
+                                        {attestationTypes.map((typeItem) => {
+                                            const code = typeItem.label
+                                                .toLowerCase()
+                                                .replace(/\s+/g, '_')
+                                                .replace(/[^a-z0-9_]/g, '');
+
+                                            // Skip if it's one of the predefined types we've already added
+                                            if (['revenu_globale', 'tva_logement_social', 'renseignement_deces', 'depart_definitif'].includes(code)) {
+                                                return null;
+                                            }
+
+                                            return (
+                                                <MenuItem key={typeItem.id} value={code}>
+                                                    {typeItem.label}
+                                                </MenuItem>
+                                            );
+                                        })}
                                     </Select>
                                 </FormControl>
                             </Grid>

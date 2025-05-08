@@ -28,6 +28,7 @@ import EditRequest from "./pages/EditRequest";
 import AttestationList from "./pages/AttestationList";
 import AttestationDetail from "./pages/AttestationDetail";
 import CreateAttestation from "./pages/CreateAttestation";
+import TypeAttestationList from "./pages/TypeAttestationList";
 
 const theme = createTheme({
     palette: {
@@ -280,6 +281,16 @@ function App() {
                             element={
                                 <ProtectedRoute roles={["ROLE_FRONTDESK", "ROLE_MANAGER", "ROLE_PROCESSING"]}>
                                     <CreateAttestation />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Type Attestation Routes - MANAGER only */}
+                        <Route
+                            path="/type-attestations"
+                            element={
+                                <ProtectedRoute roles={["ROLE_MANAGER"]}>
+                                    <TypeAttestationList />
                                 </ProtectedRoute>
                             }
                         />

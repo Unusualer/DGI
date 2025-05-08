@@ -20,6 +20,7 @@ import {
     People as PeopleIcon,
     Home as HomeIcon,
     Description as DescriptionIcon,
+    Category as CategoryIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 
@@ -290,6 +291,42 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                             </ListItemButton>
                         </ListItem>
                     )}
+
+                {/* Type Attestations - MANAGER only */}
+                {currentUser && currentUser.role === "ROLE_MANAGER" && (
+                    <ListItem
+                        disablePadding
+                        sx={{
+                            display: "block",
+                            backgroundColor:
+                                location.pathname === "/type-attestations" ? "#f0f0f0" : "inherit",
+                        }}
+                    >
+                        <ListItemButton
+                            component={Link}
+                            to="/type-attestations"
+                            sx={{
+                                minHeight: 48,
+                                justifyContent: open ? "initial" : "center",
+                                px: 2.5,
+                            }}
+                        >
+                            <ListItemIcon
+                                sx={{
+                                    minWidth: 0,
+                                    mr: open ? 3 : "auto",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <CategoryIcon />
+                            </ListItemIcon>
+                            <ListItemText
+                                primary="Types d'Attestation"
+                                sx={{ opacity: open ? 1 : 0 }}
+                            />
+                        </ListItemButton>
+                    </ListItem>
+                )}
 
                 {/* Admin - User Management */}
                 {currentUser && currentUser.role === "ROLE_ADMIN" && (

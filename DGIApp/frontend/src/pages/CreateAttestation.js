@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Container,
@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import PrintIcon from '@mui/icons-material/Print';
 import AttestationService from "../services/attestation.service";
+import TypeAttestationService from "../services/type-attestation.service";
 
 function CreateAttestation() {
     const navigate = useNavigate();
@@ -35,6 +36,52 @@ function CreateAttestation() {
     const [success, setSuccess] = useState(null);
     const [attestationId, setAttestationId] = useState(null);
     const [printingReceipt, setPrintingReceipt] = useState(false);
+
+    // Add state for attestation types
+    const [attestationTypes, setAttestationTypes] = useState([]);
+    const [loadingTypes, setLoadingTypes] = useState(false);
+
+    // Fetch attestation types on component mount
+    useEffect(() => {
+        fetchAttestationTypes();
+    }, []);
+
+    const fetchAttestationTypes = async () => {
+        setLoadingTypes(true);
+        try {
+            const types = await TypeAttestationService.getAllTypes();
+
+            // Map the types to include both code and label
+            const mappedTypes = types.map(type => ({
+                ...type,
+                code: getTypeCode(type.label)
+            }));
+
+            setAttestationTypes(mappedTypes);
+        } catch (err) {
+            console.error("Error fetching attestation types:", err);
+            setError("Erreur lors de la récupération des types d'attestations");
+        } finally {
+            setLoadingTypes(false);
+        }
+    };
+
+    // Helper function to get type code from label
+    const getTypeCode = (label) => {
+        // First handle the built-in types that have specific codes
+        if (label === "Attestation de Revenu Globale") {
+            return "revenu_globale";
+        } else if (label === "Attestation d'Assujettissement au TVA Logement Social") {
+            return "tva_logement_social";
+        } else if (label === "Attestation Renseignement Décès") {
+            return "renseignement_deces";
+        } else if (label === "Attestation Départ Définitif") {
+            return "depart_definitif";
+        } else {
+            // For custom types, generate a standardized code
+            return label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -221,11 +268,20 @@ function CreateAttestation() {
                                     value={type}
                                     label="Type d'Attestation"
                                     onChange={(e) => setType(e.target.value)}
+                                    disabled={loadingTypes}
                                 >
-                                    <MenuItem value="revenu_globale">Attestation de Revenu Globale</MenuItem>
-                                    <MenuItem value="tva_logement_social">Attestation d'Assujettissement au TVA Logement Social</MenuItem>
-                                    <MenuItem value="renseignement_deces">Attestation Renseignement Décès</MenuItem>
-                                    <MenuItem value="depart_definitif">Attestation Départ Définitif</MenuItem>
+                                    {loadingTypes ? (
+                                        <MenuItem disabled>Chargement des types...</MenuItem>
+                                    ) : (
+                                        attestationTypes.map((typeItem) => (
+                                            <MenuItem
+                                                key={typeItem.id}
+                                                value={typeItem.code}
+                                            >
+                                                {typeItem.label}
+                                            </MenuItem>
+                                        ))
+                                    )}
                                 </Select>
                                 {!type && <FormHelperText>Requis</FormHelperText>}
                             </FormControl>

@@ -1,11 +1,13 @@
 package com.dgi.app.controller;
 
 import com.dgi.app.model.Attestation;
+import com.dgi.app.model.TypeAttestation;
 import com.dgi.app.model.User;
 import com.dgi.app.payload.request.AttestationCreateRequest;
 import com.dgi.app.payload.response.AttestationResponse;
 import com.dgi.app.payload.response.MessageResponse;
 import com.dgi.app.repository.AttestationRepository;
+import com.dgi.app.repository.TypeAttestationRepository;
 import com.dgi.app.repository.UserRepository;
 import com.dgi.app.security.services.UserDetailsImpl;
 import jakarta.validation.Valid;
@@ -23,7 +25,9 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.*;
@@ -41,6 +45,12 @@ public class AttestationController {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    TypeAttestationRepository typeAttestationRepository;
+
+    // Cache for type labels
+    private final Map<String, String> typeCodeToLabelCache = new ConcurrentHashMap<>();
 
     // Helper to get current authenticated user
     private User getCurrentUser() {
@@ -431,8 +441,14 @@ public class AttestationController {
         }
     }
 
-    private String getTypeLabel(String type) {
-        switch (type) {
+    private String getTypeLabel(String typeCode) {
+        // First, check the cache
+        if (typeCodeToLabelCache.containsKey(typeCode)) {
+            return typeCodeToLabelCache.get(typeCode);
+        }
+
+        // For backward compatibility, handle known codes
+        switch (typeCode) {
             case "revenu_globale":
                 return "Attestation de Revenu Globale";
             case "tva_logement_social":
@@ -442,7 +458,24 @@ public class AttestationController {
             case "depart_definitif":
                 return "Attestation Départ Définitif";
             default:
-                return type;
+                // For new custom types, look them up in the database
+                // Try to find by code in the type_attestations table
+                List<TypeAttestation> typeAttestations = typeAttestationRepository.findAll();
+                for (TypeAttestation typeAttestation : typeAttestations) {
+                    String code = typeAttestation.getLabel()
+                            .toLowerCase()
+                            .replace(" ", "_")
+                            .replaceAll("[^a-z0-9_]", "");
+
+                    if (code.equals(typeCode)) {
+                        // Cache this for future lookups
+                        typeCodeToLabelCache.put(typeCode, typeAttestation.getLabel());
+                        return typeAttestation.getLabel();
+                    }
+                }
+
+                // If no match found, return the code as is
+                return typeCode;
         }
     }
 }

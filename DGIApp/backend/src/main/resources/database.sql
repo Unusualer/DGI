@@ -51,6 +51,12 @@ CREATE TABLE IF NOT EXISTS attestations (
     creator_id BIGINT NOT NULL REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS type_attestations (
+    id SERIAL PRIMARY KEY,
+    label VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Data initialization (default users, will only be inserted if they don't exist)
 DO $$
 BEGIN
@@ -76,6 +82,27 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM users WHERE username = 'frontdesk') THEN
         INSERT INTO users (username, email, password, role) 
         VALUES ('frontdesk', 'frontdesk@example.com', '$2a$10$TM3PAYG3b.H98cbRrHqWa.BM7YyCqV92e/kUTBfj85AjayxGZU7d6', 'ROLE_FRONTDESK');
+    END IF;
+    
+    -- Insert default attestation types if they don't exist
+    IF NOT EXISTS (SELECT 1 FROM type_attestations WHERE label = 'Attestation de Revenu Globale') THEN
+        INSERT INTO type_attestations (label) 
+        VALUES ('Attestation de Revenu Globale');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM type_attestations WHERE label = 'Attestation d''Assujettissement au TVA Logement Social') THEN
+        INSERT INTO type_attestations (label) 
+        VALUES ('Attestation d''Assujettissement au TVA Logement Social');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM type_attestations WHERE label = 'Attestation Renseignement Décès') THEN
+        INSERT INTO type_attestations (label) 
+        VALUES ('Attestation Renseignement Décès');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM type_attestations WHERE label = 'Attestation Départ Définitif') THEN
+        INSERT INTO type_attestations (label) 
+        VALUES ('Attestation Départ Définitif');
     END IF;
 END
 $$;
