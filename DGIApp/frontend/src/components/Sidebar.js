@@ -460,32 +460,34 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                                                 }}
                                             />
                                         </ListItemButton>
-                                        <ListItemButton
-                                            component={Link}
-                                            to="/type-attestations"
-                                            sx={{
-                                                pl: 4,
-                                                py: 1,
-                                                backgroundColor: location.pathname === "/type-attestations"
-                                                    ? (theme) => alpha(theme.palette.primary.main, 0.05)
-                                                    : "inherit",
-                                                color: location.pathname === "/type-attestations"
-                                                    ? 'primary.main'
-                                                    : 'text.secondary',
-                                            }}
-                                        >
-                                            <ListItemIcon sx={{ minWidth: 30, color: 'inherit' }}>
-                                                <CategoryIcon fontSize="small" />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                primary="Types d'attestation"
+                                        {currentUser?.role === "ROLE_MANAGER" && (
+                                            <ListItemButton
+                                                component={Link}
+                                                to="/type-attestations"
                                                 sx={{
-                                                    '& .MuiListItemText-primary': {
-                                                        fontSize: '0.85rem'
-                                                    }
+                                                    pl: 4,
+                                                    py: 1,
+                                                    backgroundColor: location.pathname === "/type-attestations"
+                                                        ? (theme) => alpha(theme.palette.primary.main, 0.05)
+                                                        : "inherit",
+                                                    color: location.pathname === "/type-attestations"
+                                                        ? 'primary.main'
+                                                        : 'text.secondary',
                                                 }}
-                                            />
-                                        </ListItemButton>
+                                            >
+                                                <ListItemIcon sx={{ minWidth: 30, color: 'inherit' }}>
+                                                    <CategoryIcon fontSize="small" />
+                                                </ListItemIcon>
+                                                <ListItemText
+                                                    primary="Types d'attestation"
+                                                    sx={{
+                                                        '& .MuiListItemText-primary': {
+                                                            fontSize: '0.85rem'
+                                                        }
+                                                    }}
+                                                />
+                                            </ListItemButton>
+                                        )}
                                     </List>
                                 </Collapse>
                             )}
@@ -553,7 +555,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                     <Divider sx={{ mb: 2 }} />
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Typography variant="caption" color="text.secondary">
-                            © {new Date().getFullYear()} ADGI System v1.2
+                            © {new Date().getFullYear()} DGI System v1.2
                         </Typography>
                     </Box>
                 </Box>

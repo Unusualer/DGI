@@ -244,29 +244,6 @@ function RequestList() {
             });
     };
 
-    const handleProcessingQueue = () => {
-        setLoading(true);
-        setError(null);
-
-        RequestService.getProcessingQueue()
-            .then(response => {
-                if (response && response.data) {
-                    setRequests(response.data);
-                    setStatusFilter("EN_TRAITEMENT");
-                    setSuccessMessage("Demandes en attente de traitement chargées");
-                } else {
-                    setError("Aucune donnée reçue du serveur");
-                }
-            })
-            .catch(err => {
-                console.error("Error fetching processing queue:", err);
-                setError("Erreur lors du chargement des demandes à traiter");
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    };
-
     const handleExportToExcel = () => {
         setExporting(true);
         setError(null);
@@ -483,17 +460,6 @@ function RequestList() {
                             sx={{ ml: 1 }}
                         >
                             {processingRequests ? 'Traitement...' : 'Traiter les demandes du jour'}
-                        </Button>
-                    )}
-
-                    {currentUser?.role === "ROLE_PROCESSING" && (
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            onClick={handleProcessingQueue}
-                            sx={{ ml: 1 }}
-                        >
-                            Traiter les demandes en attente
                         </Button>
                     )}
 

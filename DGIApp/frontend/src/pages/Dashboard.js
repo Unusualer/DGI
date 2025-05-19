@@ -701,7 +701,6 @@ function Dashboard() {
                 >
                     <Tab label="Demandes" />
                     <Tab label="Attestations" />
-                    <Tab label="Comparaison" />
                 </Tabs>
             </Paper>
 
@@ -749,7 +748,7 @@ function Dashboard() {
                                 </Typography>
                             </Box>
                             <Grid container spacing={2} sx={{ mb: 3 }}>
-                                <Grid item xs={6} sm={3}>
+                                <Grid item xs={6}>
                                     <Box sx={{ p: 2, bgcolor: alpha('#2196f3', 0.15), borderRadius: 2, textAlign: 'center' }}>
                                         <Typography variant="body2" color="text.secondary" gutterBottom>
                                             Nouveau
@@ -759,7 +758,7 @@ function Dashboard() {
                                         </Typography>
                                     </Box>
                                 </Grid>
-                                <Grid item xs={6} sm={3}>
+                                <Grid item xs={6}>
                                     <Box sx={{ p: 2, bgcolor: alpha('#ff9800', 0.15), borderRadius: 2, textAlign: 'center' }}>
                                         <Typography variant="body2" color="text.secondary" gutterBottom>
                                             En Traitement
@@ -769,7 +768,7 @@ function Dashboard() {
                                         </Typography>
                                     </Box>
                                 </Grid>
-                                <Grid item xs={6} sm={3}>
+                                <Grid item xs={6}>
                                     <Box sx={{ p: 2, bgcolor: alpha('#4caf50', 0.15), borderRadius: 2, textAlign: 'center' }}>
                                         <Typography variant="body2" color="text.secondary" gutterBottom>
                                             Traité
@@ -779,7 +778,7 @@ function Dashboard() {
                                         </Typography>
                                     </Box>
                                 </Grid>
-                                <Grid item xs={6} sm={3}>
+                                <Grid item xs={6}>
                                     <Box sx={{ p: 2, bgcolor: alpha('#f44336', 0.15), borderRadius: 2, textAlign: 'center' }}>
                                         <Typography variant="body2" color="text.secondary" gutterBottom>
                                             Rejeté
@@ -790,25 +789,6 @@ function Dashboard() {
                                     </Box>
                                 </Grid>
                             </Grid>
-                            <Box sx={{ height: 210, mt: 3 }}>
-                                <Bar
-                                    data={documentsBarChartData}
-                                    options={{
-                                        ...barOptions,
-                                        plugins: {
-                                            ...barOptions.plugins,
-                                            title: {
-                                                display: false
-                                            }
-                                        },
-                                        scales: {
-                                            y: {
-                                                beginAtZero: true
-                                            }
-                                        }
-                                    }}
-                                />
-                            </Box>
                         </Paper>
                     </Grid>
                 </Grid>
@@ -875,19 +855,6 @@ function Dashboard() {
                             </Paper>
                         </Grid>
                     </Grid>
-                </>
-            )}
-
-            {activeTab === 2 && (
-                <>
-                    <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 3, fontWeight: 'bold' }}>
-                        Comparaison Demandes vs Attestations
-                    </Typography>
-                    <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
-                        <Box sx={{ height: 400 }}>
-                            <Bar data={documentsBarChartData} options={barOptions} />
-                        </Box>
-                    </Paper>
                 </>
             )}
 
