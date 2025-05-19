@@ -47,6 +47,9 @@ const UserManagement = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [roleFilter, setRoleFilter] = useState("Tous");
     const [successMessage, setSuccessMessage] = useState(null);
+    // Add sorting state
+    const [orderBy, setOrderBy] = useState('id');
+    const [order, setOrder] = useState('asc');
 
     // CRUD State
     const [openDialog, setOpenDialog] = useState(false);
@@ -402,8 +405,42 @@ const UserManagement = () => {
         }
     };
 
-    // Filter users based on search query and role filter
-    const filteredUsers = users.filter((user) => {
+    // Add sorting handler
+    const handleRequestSort = (property) => {
+        const isAsc = orderBy === property && order === 'asc';
+        setOrder(isAsc ? 'desc' : 'asc');
+        setOrderBy(property);
+    };
+
+    // Add sorting function
+    const sortUsers = (users) => {
+        return users.sort((a, b) => {
+            const isAsc = order === 'asc';
+            let comparison = 0;
+
+            switch (orderBy) {
+                case 'id':
+                    comparison = a.id - b.id;
+                    break;
+                case 'username':
+                    comparison = a.username.localeCompare(b.username);
+                    break;
+                case 'email':
+                    comparison = a.email.localeCompare(b.email);
+                    break;
+                case 'role':
+                    comparison = a.role.localeCompare(b.role);
+                    break;
+                default:
+                    comparison = 0;
+            }
+
+            return isAsc ? comparison : -comparison;
+        });
+    };
+
+    // Update filteredUsers to include sorting
+    const filteredUsers = sortUsers(users.filter((user) => {
         const matchesSearch = searchQuery === "" ||
             (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (user.email && user.email.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -411,7 +448,7 @@ const UserManagement = () => {
         const matchesRole = roleFilter === "Tous" || user.role === roleFilter;
 
         return matchesSearch && matchesRole;
-    });
+    }));
 
     // Get users for current page
     const displayedUsers = filteredUsers
@@ -623,10 +660,30 @@ const UserManagement = () => {
                         <Table stickyHeader aria-label="users table">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>ID</TableCell>
-                                    <TableCell>Nom d'utilisateur</TableCell>
-                                    <TableCell>Email</TableCell>
-                                    <TableCell>Rôle</TableCell>
+                                    <TableCell
+                                        onClick={() => handleRequestSort('id')}
+                                        sx={{ cursor: 'pointer', userSelect: 'none' }}
+                                    >
+                                        ID {orderBy === 'id' && (order === 'asc' ? '↑' : '↓')}
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={() => handleRequestSort('username')}
+                                        sx={{ cursor: 'pointer', userSelect: 'none' }}
+                                    >
+                                        Nom d'utilisateur {orderBy === 'username' && (order === 'asc' ? '↑' : '↓')}
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={() => handleRequestSort('email')}
+                                        sx={{ cursor: 'pointer', userSelect: 'none' }}
+                                    >
+                                        Email {orderBy === 'email' && (order === 'asc' ? '↑' : '↓')}
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={() => handleRequestSort('role')}
+                                        sx={{ cursor: 'pointer', userSelect: 'none' }}
+                                    >
+                                        Rôle {orderBy === 'role' && (order === 'asc' ? '↑' : '↓')}
+                                    </TableCell>
                                     <TableCell>Actions</TableCell>
                                 </TableRow>
                             </TableHead>
@@ -676,6 +733,18 @@ const UserManagement = () => {
                         page={page}
                         onPageChange={handleChangePage}
                         onRowsPerPageChange={handleChangeRowsPerPage}
+                        labelRowsPerPage="Lignes par page:"
+                        labelDisplayedRows={({ from, to, count }) => `${from}–${to} sur ${count}`}
+                        sx={{
+                            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                                margin: 0
+                            },
+                            '.MuiTablePagination-toolbar': {
+                                minHeight: '52px',
+                                display: 'flex',
+                                alignItems: 'center'
+                            }
+                        }}
                     />
                 </Paper>
             ) : (

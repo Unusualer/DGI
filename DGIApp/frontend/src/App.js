@@ -14,13 +14,11 @@ import Sidebar from "./components/Sidebar";
 
 // Pages
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import RequestList from "./pages/RequestList";
 import RequestDetail from "./pages/RequestDetail";
 import CreateRequest from "./pages/CreateRequest";
-import TrackRequest from "./pages/TrackRequest";
 import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
@@ -33,12 +31,132 @@ import TypeAttestationList from "./pages/TypeAttestationList";
 const theme = createTheme({
     palette: {
         primary: {
-            main: "#1976d2",
+            main: "#1e88e5",
+            light: "#6ab7ff",
+            dark: "#005cb2",
+            contrastText: "#ffffff",
         },
         secondary: {
-            main: "#dc004e",
+            main: "#ff6e40",
+            light: "#ffa06d",
+            dark: "#c53d13",
+            contrastText: "#ffffff",
+        },
+        background: {
+            default: "#f5f7fa",
+            paper: "#ffffff"
+        },
+        error: {
+            main: "#f44336",
+        },
+        warning: {
+            main: "#ff9800",
+        },
+        info: {
+            main: "#03a9f4",
+        },
+        success: {
+            main: "#4caf50",
+        },
+        grey: {
+            50: "#fafafa",
+            100: "#f5f5f5",
+            200: "#eeeeee",
+            300: "#e0e0e0",
+            400: "#bdbdbd",
+            500: "#9e9e9e",
+            600: "#757575",
+            700: "#616161",
+            800: "#424242",
+            900: "#212121",
         },
     },
+    typography: {
+        fontFamily: [
+            'Roboto',
+            'Arial',
+            'sans-serif'
+        ].join(','),
+        h1: {
+            fontWeight: 500,
+            fontSize: '2rem',
+        },
+        h2: {
+            fontWeight: 500,
+            fontSize: '1.8rem',
+        },
+        h3: {
+            fontWeight: 500,
+            fontSize: '1.6rem',
+        },
+        h4: {
+            fontWeight: 500,
+            fontSize: '1.4rem',
+        },
+        h5: {
+            fontWeight: 500,
+            fontSize: '1.2rem',
+        },
+        h6: {
+            fontWeight: 500,
+            fontSize: '1rem',
+        },
+        subtitle1: {
+            fontSize: '0.875rem',
+        },
+        subtitle2: {
+            fontSize: '0.8rem',
+            fontWeight: 500,
+        },
+        body1: {
+            fontSize: '0.875rem',
+        },
+        body2: {
+            fontSize: '0.8rem',
+        },
+        button: {
+            textTransform: 'none',
+            fontWeight: 500
+        }
+    },
+    shape: {
+        borderRadius: 8
+    },
+    shadows: [
+        'none',
+        '0px 2px 1px -1px rgba(0,0,0,0.08), 0px 1px 1px 0px rgba(0,0,0,0.04), 0px 1px 3px 0px rgba(0,0,0,0.02)',
+        '0px 3px 1px -2px rgba(0,0,0,0.1), 0px 2px 2px 0px rgba(0,0,0,0.05), 0px 1px 5px 0px rgba(0,0,0,0.03)',
+        '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+        // ...rest of the shadows remain default
+    ].concat(createTheme().shadows.slice(4)),
+    components: {
+        MuiButton: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 8,
+                    boxShadow: '0 2px 5px 0 rgba(0,0,0,.08)',
+                    '&:hover': {
+                        boxShadow: '0 4px 10px 0 rgba(0,0,0,.12)',
+                    },
+                }
+            }
+        },
+        MuiPaper: {
+            styleOverrides: {
+                root: {
+                    boxShadow: '0 2px 12px 0 rgba(0,0,0,.05)'
+                }
+            }
+        },
+        MuiTableCell: {
+            styleOverrides: {
+                head: {
+                    fontWeight: 600,
+                    backgroundColor: "rgba(0, 0, 0, 0.03)"
+                }
+            }
+        }
+    }
 }, frFR);
 
 function App() {
@@ -189,7 +307,6 @@ function App() {
                     <Routes>
                         <Route path="/" element={currentUser ? <Home /> : <Navigate to="/login" />} />
                         <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
 
                         {/* Protected routes */}
                         <Route
@@ -254,8 +371,6 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
-
-                        <Route path="/track-request" element={<TrackRequest />} />
 
                         {/* Attestation Routes */}
                         <Route

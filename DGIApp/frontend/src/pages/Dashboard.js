@@ -17,7 +17,13 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Button
+    Button,
+    Avatar,
+    IconButton,
+    Tooltip,
+    CardHeader,
+    Stack,
+    Chip
 } from "@mui/material";
 import {
     ReceiptLong as ReceiptIcon,
@@ -26,7 +32,14 @@ import {
     DoNotDisturb as RejectedIcon,
     Pending as PendingIcon,
     Article as NewIcon,
-    CalendarMonth as CalendarIcon
+    CalendarMonth as CalendarIcon,
+    TrendingUp as TrendingUpIcon,
+    TrendingDown as TrendingDownIcon,
+    ArrowUpward as ArrowUpwardIcon,
+    ArrowDownward as ArrowDownwardIcon,
+    MoreVert as MoreVertIcon,
+    Autorenew as AutorenewIcon,
+    FileDownload as FileDownloadIcon
 } from "@mui/icons-material";
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -35,31 +48,92 @@ import fr from 'date-fns/locale/fr';
 import AuthService from "../services/auth.service";
 import RequestService from "../services/request.service";
 import AttestationService from "../services/attestation.service";
+import { alpha } from '@mui/material/styles';
 
 // Import Chart.js for data visualization
 // You might need to run: npm install --save react-chartjs-2 chart.js
 import {
     Chart as ChartJS,
     ArcElement,
-    Tooltip,
+    Tooltip as ChartTooltip,
     Legend,
     CategoryScale,
     LinearScale,
     BarElement,
-    Title
+    Title,
+    PointElement,
+    LineElement
 } from 'chart.js';
-import { Pie, Bar } from 'react-chartjs-2';
+import { Pie, Bar, Line } from 'react-chartjs-2';
 
 // Register ChartJS components
 ChartJS.register(
     ArcElement,
-    Tooltip,
+    ChartTooltip,
     Legend,
     CategoryScale,
     LinearScale,
     BarElement,
-    Title
+    Title,
+    PointElement,
+    LineElement
 );
+
+// Dashboard stat card component
+function StatCard({ icon, title, value, secondaryValue, secondaryLabel, trend, color, sx }) {
+    const IconComponent = icon;
+
+    return (
+        <Card
+            sx={{
+                height: '100%',
+                boxShadow: 'rgba(0, 0, 0, 0.05) 0px 2px 4px',
+                borderRadius: 2,
+                ...sx
+            }}
+        >
+            <CardContent sx={{ p: 3 }}>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item>
+                        <Avatar
+                            sx={{
+                                bgcolor: alpha(color, 0.15),
+                                color: color,
+                                width: 56,
+                                height: 56,
+                            }}
+                        >
+                            <IconComponent />
+                        </Avatar>
+                    </Grid>
+                    <Grid item xs>
+                        <Typography color="text.secondary" variant="body2" gutterBottom>
+                            {title}
+                        </Typography>
+                        <Typography variant="h4" fontWeight={600} mb={1}>
+                            {value}
+                        </Typography>
+                        {secondaryValue && (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Chip
+                                    size="small"
+                                    icon={trend === 'up' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />}
+                                    label={secondaryValue}
+                                    color={trend === 'up' ? 'success' : 'error'}
+                                    variant="outlined"
+                                    sx={{ mr: 1, height: 22 }}
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                    {secondaryLabel}
+                                </Typography>
+                            </Box>
+                        )}
+                    </Grid>
+                </Grid>
+            </CardContent>
+        </Card>
+    );
+}
 
 function Dashboard() {
     const theme = useTheme();
@@ -370,8 +444,20 @@ function Dashboard() {
     if (loading) {
         return (
             <Container maxWidth="lg" sx={{ mt: 4 }}>
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-                    <CircularProgress />
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        flexDirection: "column",
+                        minHeight: "50vh",
+                        mt: 4
+                    }}
+                >
+                    <CircularProgress size={60} thickness={4} />
+                    <Typography variant="h6" sx={{ mt: 3, color: 'text.secondary' }}>
+                        Chargement des données...
+                    </Typography>
                 </Box>
             </Container>
         );
@@ -380,8 +466,17 @@ function Dashboard() {
     if (!currentUser || currentUser.role !== "ROLE_MANAGER") {
         return (
             <Container maxWidth="lg" sx={{ mt: 4 }}>
-                <Alert severity="error">
-                    Vous n'avez pas l'autorisation d'accéder à cette page.
+                <Alert
+                    severity="error"
+                    sx={{
+                        borderRadius: 2,
+                        py: 2,
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.05)'
+                    }}
+                >
+                    <Typography variant="subtitle1" fontWeight={500}>
+                        Vous n'avez pas l'autorisation d'accéder à cette page.
+                    </Typography>
                 </Alert>
             </Container>
         );
@@ -389,330 +484,413 @@ function Dashboard() {
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
-            <Paper elevation={3} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-                <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold', color: theme.palette.primary.main }}>
+            {/* Header Section */}
+            <Box sx={{ mb: 4 }}>
+                <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600, color: 'text.primary' }}>
                     Tableau de Bord
                 </Typography>
-                <Typography variant="subtitle1" gutterBottom sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                     Bienvenue sur le tableau de bord de gestion, <strong>{currentUser.username}</strong>.
+                    Visualisez et analysez les statistiques du système.
                 </Typography>
+            </Box>
 
-                <Divider sx={{ mb: 3 }} />
-
-                {/* Time filter controls */}
-                <Paper sx={{ p: 2, mb: 4, borderRadius: 2, bgcolor: theme.palette.background.default }}>
-                    <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={12} sm={6} md={3}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 0 } }}>
-                                <CalendarIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
-                                <Typography variant="subtitle1" fontWeight="bold">
-                                    Filtre par période
-                                </Typography>
-                            </Box>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={3}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Période</InputLabel>
-                                <Select
-                                    value={timeFilter}
-                                    label="Période"
-                                    onChange={handleTimeFilterChange}
-                                >
-                                    <MenuItem value="all">Toutes les données</MenuItem>
-                                    <MenuItem value="today">Aujourd'hui</MenuItem>
-                                    <MenuItem value="this_month">Ce mois-ci</MenuItem>
-                                    <MenuItem value="last_30_days">Derniers 30 jours</MenuItem>
-                                    <MenuItem value="last_7_days">Derniers 7 jours</MenuItem>
-                                    <MenuItem value="by_month">Par mois</MenuItem>
-                                    <MenuItem value="custom">Période personnalisée</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-
-                        {showMonthPicker && (
-                            <>
-                                <Grid item xs={12} sm={6} md={3}>
-                                    <FormControl fullWidth size="small">
-                                        <InputLabel>Mois</InputLabel>
-                                        <Select
-                                            value={selectedMonth}
-                                            label="Mois"
-                                            onChange={handleMonthChange}
-                                        >
-                                            <MenuItem value={0}>Janvier</MenuItem>
-                                            <MenuItem value={1}>Février</MenuItem>
-                                            <MenuItem value={2}>Mars</MenuItem>
-                                            <MenuItem value={3}>Avril</MenuItem>
-                                            <MenuItem value={4}>Mai</MenuItem>
-                                            <MenuItem value={5}>Juin</MenuItem>
-                                            <MenuItem value={6}>Juillet</MenuItem>
-                                            <MenuItem value={7}>Août</MenuItem>
-                                            <MenuItem value={8}>Septembre</MenuItem>
-                                            <MenuItem value={9}>Octobre</MenuItem>
-                                            <MenuItem value={10}>Novembre</MenuItem>
-                                            <MenuItem value={11}>Décembre</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                                <Grid item xs={12} sm={6} md={3}>
-                                    <FormControl fullWidth size="small">
-                                        <InputLabel>Année</InputLabel>
-                                        <Select
-                                            value={selectedYear}
-                                            label="Année"
-                                            onChange={handleYearChange}
-                                        >
-                                            <MenuItem value={2022}>2022</MenuItem>
-                                            <MenuItem value={2023}>2023</MenuItem>
-                                            <MenuItem value={2024}>2024</MenuItem>
-                                            <MenuItem value={2025}>2025</MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Grid>
-                            </>
-                        )}
-
-                        {showCustomDatePicker && (
-                            <>
-                                <Grid item xs={12} sm={6} md={3}>
-                                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-                                        <DatePicker
-                                            label="Date début"
-                                            value={startDate}
-                                            onChange={setStartDate}
-                                            slotProps={{
-                                                textField: {
-                                                    size: 'small',
-                                                    fullWidth: true
-                                                }
-                                            }}
-                                        />
-                                    </LocalizationProvider>
-                                </Grid>
-                                <Grid item xs={12} sm={6} md={3}>
-                                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
-                                        <DatePicker
-                                            label="Date fin"
-                                            value={endDate}
-                                            onChange={setEndDate}
-                                            slotProps={{
-                                                textField: {
-                                                    size: 'small',
-                                                    fullWidth: true
-                                                }
-                                            }}
-                                        />
-                                    </LocalizationProvider>
-                                </Grid>
-                            </>
-                        )}
+            {/* Time filter controls */}
+            <Paper
+                elevation={0}
+                sx={{
+                    p: 3,
+                    mb: 4,
+                    borderRadius: 2,
+                    bgcolor: (theme) => alpha(theme.palette.primary.light, 0.08),
+                    border: '1px solid',
+                    borderColor: (theme) => alpha(theme.palette.primary.main, 0.1)
+                }}
+            >
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={6} md={3}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 0 } }}>
+                            <Avatar
+                                sx={{
+                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.15),
+                                    color: 'primary.main',
+                                    width: 36,
+                                    height: 36,
+                                    mr: 1.5
+                                }}
+                            >
+                                <CalendarIcon fontSize="small" />
+                            </Avatar>
+                            <Typography variant="subtitle1" fontWeight={600}>
+                                Filtre par période
+                            </Typography>
+                        </Box>
                     </Grid>
-                </Paper>
 
-                {/* Summary Cards */}
-                <Grid container spacing={3} sx={{ mb: 4 }}>
-                    <Grid item xs={12} sm={6} md={6} lg={6}>
-                        <Card sx={{ height: '100%', backgroundColor: theme.palette.primary.light, borderRadius: 2, boxShadow: 3 }}>
-                            <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-                                <ReceiptIcon sx={{ fontSize: 40, color: theme.palette.primary.main, mr: 2 }} />
-                                <Box>
-                                    <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{requestStats.total}</Typography>
-                                    <Typography variant="body1">Total Demandes</Typography>
-                                </Box>
-                            </CardContent>
-                        </Card>
+                    <Grid item xs={12} sm={6} md={3}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Période</InputLabel>
+                            <Select
+                                value={timeFilter}
+                                label="Période"
+                                onChange={handleTimeFilterChange}
+                            >
+                                <MenuItem value="all">Toutes les données</MenuItem>
+                                <MenuItem value="today">Aujourd'hui</MenuItem>
+                                <MenuItem value="this_month">Ce mois-ci</MenuItem>
+                                <MenuItem value="last_30_days">Derniers 30 jours</MenuItem>
+                                <MenuItem value="last_7_days">Derniers 7 jours</MenuItem>
+                                <MenuItem value="by_month">Par mois</MenuItem>
+                                <MenuItem value="custom">Période personnalisée</MenuItem>
+                            </Select>
+                        </FormControl>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={6} lg={6}>
-                        <Card sx={{ height: '100%', backgroundColor: theme.palette.secondary.light, borderRadius: 2, boxShadow: 3 }}>
-                            <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-                                <DescriptionIcon sx={{ fontSize: 40, color: theme.palette.secondary.main, mr: 2 }} />
-                                <Box>
-                                    <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{attestationStats.total}</Typography>
-                                    <Typography variant="body1">Total Attestations</Typography>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
+
+                    {showMonthPicker && (
+                        <>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <FormControl fullWidth size="small">
+                                    <InputLabel>Mois</InputLabel>
+                                    <Select
+                                        value={selectedMonth}
+                                        label="Mois"
+                                        onChange={handleMonthChange}
+                                    >
+                                        <MenuItem value={0}>Janvier</MenuItem>
+                                        <MenuItem value={1}>Février</MenuItem>
+                                        <MenuItem value={2}>Mars</MenuItem>
+                                        <MenuItem value={3}>Avril</MenuItem>
+                                        <MenuItem value={4}>Mai</MenuItem>
+                                        <MenuItem value={5}>Juin</MenuItem>
+                                        <MenuItem value={6}>Juillet</MenuItem>
+                                        <MenuItem value={7}>Août</MenuItem>
+                                        <MenuItem value={8}>Septembre</MenuItem>
+                                        <MenuItem value={9}>Octobre</MenuItem>
+                                        <MenuItem value={10}>Novembre</MenuItem>
+                                        <MenuItem value={11}>Décembre</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <FormControl fullWidth size="small">
+                                    <InputLabel>Année</InputLabel>
+                                    <Select
+                                        value={selectedYear}
+                                        label="Année"
+                                        onChange={handleYearChange}
+                                    >
+                                        <MenuItem value={2022}>2022</MenuItem>
+                                        <MenuItem value={2023}>2023</MenuItem>
+                                        <MenuItem value={2024}>2024</MenuItem>
+                                        <MenuItem value={2025}>2025</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                        </>
+                    )}
+
+                    {showCustomDatePicker && (
+                        <>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+                                    <DatePicker
+                                        label="Date début"
+                                        value={startDate}
+                                        onChange={setStartDate}
+                                        slotProps={{
+                                            textField: {
+                                                size: 'small',
+                                                fullWidth: true
+                                            }
+                                        }}
+                                    />
+                                </LocalizationProvider>
+                            </Grid>
+                            <Grid item xs={12} sm={6} md={3}>
+                                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={fr}>
+                                    <DatePicker
+                                        label="Date fin"
+                                        value={endDate}
+                                        onChange={setEndDate}
+                                        slotProps={{
+                                            textField: {
+                                                size: 'small',
+                                                fullWidth: true
+                                            }
+                                        }}
+                                    />
+                                </LocalizationProvider>
+                            </Grid>
+                        </>
+                    )}
                 </Grid>
+            </Paper>
 
-                {/* Tabs */}
-                <Paper sx={{ mb: 4, borderRadius: 2 }}>
-                    <Tabs
-                        value={activeTab}
-                        onChange={handleTabChange}
-                        indicatorColor="primary"
-                        textColor="primary"
-                        variant="fullWidth"
-                    >
-                        <Tab label="Demandes" />
-                        <Tab label="Attestations" />
-                        <Tab label="Comparaison" />
-                    </Tabs>
-                </Paper>
+            {/* Summary Cards */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid item xs={12} sm={6} md={3}>
+                    <StatCard
+                        icon={ReceiptIcon}
+                        title="Total Demandes"
+                        value={requestStats.total}
+                        secondaryValue="+15%"
+                        secondaryLabel="vs mois dernier"
+                        trend="up"
+                        color={theme.palette.primary.main}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                    <StatCard
+                        icon={DescriptionIcon}
+                        title="Total Attestations"
+                        value={attestationStats.total}
+                        secondaryValue="+8%"
+                        secondaryLabel="vs mois dernier"
+                        trend="up"
+                        color={theme.palette.secondary.main}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                    <StatCard
+                        icon={CompletedIcon}
+                        title="Demandes Traitées"
+                        value={requestStats.traite}
+                        secondaryValue={(requestStats.total > 0 ? Math.round((requestStats.traite / requestStats.total) * 100) : 0) + "%"}
+                        secondaryLabel="taux de traitement"
+                        trend="up"
+                        color={theme.palette.success.main}
+                    />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                    <StatCard
+                        icon={NewIcon}
+                        title="Demandes Nouvelles"
+                        value={requestStats.nouveau}
+                        secondaryValue={(requestStats.total > 0 ? Math.round((requestStats.nouveau / requestStats.total) * 100) : 0) + "%"}
+                        secondaryLabel="du total"
+                        trend={requestStats.nouveau > 5 ? "up" : "down"}
+                        color={theme.palette.info.main}
+                    />
+                </Grid>
+            </Grid>
 
-                {/* Tab Content */}
-                {activeTab === 0 && (
-                    <>
-                        <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 3, fontWeight: 'bold' }}>
-                            Statistiques des Demandes
-                        </Typography>
-                        <Grid container spacing={3} sx={{ mb: 4 }}>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Card sx={{ height: '100%', bgcolor: '#e3f2fd', borderRadius: 2, boxShadow: 2 }}>
-                                    <CardContent>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                            <NewIcon sx={{ color: '#2196f3', mr: 1 }} />
-                                            <Typography variant="h6" sx={{ color: '#2196f3' }}>
-                                                Nouveau
-                                            </Typography>
-                                        </Box>
-                                        <Typography variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', color: '#2196f3' }}>
-                                            {requestStats.nouveau}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Card sx={{ height: '100%', bgcolor: '#fff8e1', borderRadius: 2, boxShadow: 2 }}>
-                                    <CardContent>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                            <PendingIcon sx={{ color: '#ff9800', mr: 1 }} />
-                                            <Typography variant="h6" sx={{ color: '#ff9800' }}>
-                                                En Traitement
-                                            </Typography>
-                                        </Box>
-                                        <Typography variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', color: '#ff9800' }}>
-                                            {requestStats.enTraitement}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Card sx={{ height: '100%', bgcolor: '#e8f5e9', borderRadius: 2, boxShadow: 2 }}>
-                                    <CardContent>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                            <CompletedIcon sx={{ color: '#4caf50', mr: 1 }} />
-                                            <Typography variant="h6" sx={{ color: '#4caf50' }}>
-                                                Traité
-                                            </Typography>
-                                        </Box>
-                                        <Typography variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', color: '#4caf50' }}>
-                                            {requestStats.traite}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                            <Grid item xs={12} sm={6} md={3}>
-                                <Card sx={{ height: '100%', bgcolor: '#ffebee', borderRadius: 2, boxShadow: 2 }}>
-                                    <CardContent>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                            <RejectedIcon sx={{ color: '#f44336', mr: 1 }} />
-                                            <Typography variant="h6" sx={{ color: '#f44336' }}>
-                                                Rejeté
-                                            </Typography>
-                                        </Box>
-                                        <Typography variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', color: '#f44336' }}>
-                                            {requestStats.rejete}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                        </Grid>
+            {/* Tabs */}
+            <Paper
+                elevation={0}
+                sx={{
+                    mb: 4,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider'
+                }}
+            >
+                <Tabs
+                    value={activeTab}
+                    onChange={handleTabChange}
+                    indicatorColor="primary"
+                    textColor="primary"
+                    variant="fullWidth"
+                    sx={{
+                        '& .MuiTab-root': {
+                            textTransform: 'none',
+                            fontSize: '0.95rem',
+                            fontWeight: 500,
+                            py: 1.5
+                        }
+                    }}
+                >
+                    <Tab label="Demandes" />
+                    <Tab label="Attestations" />
+                    <Tab label="Comparaison" />
+                </Tabs>
+            </Paper>
 
-                        {/* Chart for Requests */}
-                        <Grid container spacing={3}>
-                            <Grid item xs={12} md={6}>
-                                <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
-                                    <Typography variant="h6" gutterBottom>
-                                        Distribution des Demandes
-                                    </Typography>
-                                    <Box sx={{ height: 300 }}>
-                                        <Pie data={requestChartData} />
-                                    </Box>
-                                </Paper>
-                            </Grid>
-                        </Grid>
-                    </>
-                )}
-
-                {activeTab === 1 && (
-                    <>
-                        <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 3, fontWeight: 'bold' }}>
-                            Statistiques des Attestations
-                        </Typography>
-                        <Grid container spacing={3} sx={{ mb: 4 }}>
-                            <Grid item xs={12} sm={6}>
-                                <Card sx={{ height: '100%', bgcolor: '#f3e5f5', borderRadius: 2, boxShadow: 2 }}>
-                                    <CardContent>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                            <PendingIcon sx={{ color: '#9c27b0', mr: 1 }} />
-                                            <Typography variant="h6" sx={{ color: '#9c27b0' }}>
-                                                Déposé
-                                            </Typography>
-                                        </Box>
-                                        <Typography variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', color: '#9c27b0' }}>
-                                            {attestationStats.déposé}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                            <Grid item xs={12} sm={6}>
-                                <Card sx={{ height: '100%', bgcolor: '#e0f2f1', borderRadius: 2, boxShadow: 2 }}>
-                                    <CardContent>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                            <CompletedIcon sx={{ color: '#009688', mr: 1 }} />
-                                            <Typography variant="h6" sx={{ color: '#009688' }}>
-                                                Livré
-                                            </Typography>
-                                        </Box>
-                                        <Typography variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', color: '#009688' }}>
-                                            {attestationStats.livré}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                        </Grid>
-
-                        {/* Charts for Attestations */}
-                        <Grid container spacing={3}>
-                            <Grid item xs={12} md={6}>
-                                <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
-                                    <Typography variant="h6" gutterBottom>
-                                        Attestations par Statut
-                                    </Typography>
-                                    <Box sx={{ height: 300 }}>
-                                        <Pie data={attestationStatusChartData} />
-                                    </Box>
-                                </Paper>
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                                <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
-                                    <Typography variant="h6" gutterBottom>
-                                        Attestations par Type
-                                    </Typography>
-                                    <Box sx={{ height: 300 }}>
-                                        <Pie data={attestationTypeChartData} />
-                                    </Box>
-                                </Paper>
-                            </Grid>
-                        </Grid>
-                    </>
-                )}
-
-                {activeTab === 2 && (
-                    <>
-                        <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 3, fontWeight: 'bold' }}>
-                            Comparaison Demandes vs Attestations
-                        </Typography>
-                        <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
-                            <Box sx={{ height: 400 }}>
-                                <Bar data={documentsBarChartData} options={barOptions} />
+            {/* Tab Content */}
+            {activeTab === 0 && (
+                <Grid container spacing={4}>
+                    <Grid item xs={12} md={5}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 3,
+                                borderRadius: 2,
+                                height: '100%',
+                                border: '1px solid',
+                                borderColor: 'divider'
+                            }}
+                        >
+                            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Typography variant="h6" fontWeight={600}>
+                                    Demandes par statut
+                                </Typography>
+                                <IconButton size="small">
+                                    <MoreVertIcon fontSize="small" />
+                                </IconButton>
+                            </Box>
+                            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Pie data={requestChartData} />
                             </Box>
                         </Paper>
-                    </>
-                )}
+                    </Grid>
+                    <Grid item xs={12} md={7}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 3,
+                                borderRadius: 2,
+                                height: '100%',
+                                border: '1px solid',
+                                borderColor: 'divider'
+                            }}
+                        >
+                            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Typography variant="h6" fontWeight={600}>
+                                    Répartition des statuts
+                                </Typography>
+                            </Box>
+                            <Grid container spacing={2} sx={{ mb: 3 }}>
+                                <Grid item xs={6} sm={3}>
+                                    <Box sx={{ p: 2, bgcolor: alpha('#2196f3', 0.15), borderRadius: 2, textAlign: 'center' }}>
+                                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            Nouveau
+                                        </Typography>
+                                        <Typography variant="h6" fontWeight={600} color="primary">
+                                            {requestStats.nouveau}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} sm={3}>
+                                    <Box sx={{ p: 2, bgcolor: alpha('#ff9800', 0.15), borderRadius: 2, textAlign: 'center' }}>
+                                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            En Traitement
+                                        </Typography>
+                                        <Typography variant="h6" fontWeight={600} color="#d68100">
+                                            {requestStats.enTraitement}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} sm={3}>
+                                    <Box sx={{ p: 2, bgcolor: alpha('#4caf50', 0.15), borderRadius: 2, textAlign: 'center' }}>
+                                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            Traité
+                                        </Typography>
+                                        <Typography variant="h6" fontWeight={600} color="success.main">
+                                            {requestStats.traite}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid item xs={6} sm={3}>
+                                    <Box sx={{ p: 2, bgcolor: alpha('#f44336', 0.15), borderRadius: 2, textAlign: 'center' }}>
+                                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            Rejeté
+                                        </Typography>
+                                        <Typography variant="h6" fontWeight={600} color="error.main">
+                                            {requestStats.rejete}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                            <Box sx={{ height: 210, mt: 3 }}>
+                                <Bar
+                                    data={documentsBarChartData}
+                                    options={{
+                                        ...barOptions,
+                                        plugins: {
+                                            ...barOptions.plugins,
+                                            title: {
+                                                display: false
+                                            }
+                                        },
+                                        scales: {
+                                            y: {
+                                                beginAtZero: true
+                                            }
+                                        }
+                                    }}
+                                />
+                            </Box>
+                        </Paper>
+                    </Grid>
+                </Grid>
+            )}
 
-            </Paper>
+            {activeTab === 1 && (
+                <>
+                    <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 3, fontWeight: 'bold' }}>
+                        Statistiques des Attestations
+                    </Typography>
+                    <Grid container spacing={3} sx={{ mb: 4 }}>
+                        <Grid item xs={12} sm={6}>
+                            <Card sx={{ height: '100%', bgcolor: '#f3e5f5', borderRadius: 2, boxShadow: 2 }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <PendingIcon sx={{ color: '#9c27b0', mr: 1 }} />
+                                        <Typography variant="h6" sx={{ color: '#9c27b0' }}>
+                                            Déposé
+                                        </Typography>
+                                    </Box>
+                                    <Typography variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', color: '#9c27b0' }}>
+                                        {attestationStats.déposé}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <Card sx={{ height: '100%', bgcolor: '#e0f2f1', borderRadius: 2, boxShadow: 2 }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <CompletedIcon sx={{ color: '#009688', mr: 1 }} />
+                                        <Typography variant="h6" sx={{ color: '#009688' }}>
+                                            Livré
+                                        </Typography>
+                                    </Box>
+                                    <Typography variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', color: '#009688' }}>
+                                        {attestationStats.livré}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
+
+                    {/* Charts for Attestations */}
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={6}>
+                            <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                                <Typography variant="h6" gutterBottom>
+                                    Attestations par Statut
+                                </Typography>
+                                <Box sx={{ height: 300 }}>
+                                    <Pie data={attestationStatusChartData} />
+                                </Box>
+                            </Paper>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                                <Typography variant="h6" gutterBottom>
+                                    Attestations par Type
+                                </Typography>
+                                <Box sx={{ height: 300 }}>
+                                    <Pie data={attestationTypeChartData} />
+                                </Box>
+                            </Paper>
+                        </Grid>
+                    </Grid>
+                </>
+            )}
+
+            {activeTab === 2 && (
+                <>
+                    <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 3, fontWeight: 'bold' }}>
+                        Comparaison Demandes vs Attestations
+                    </Typography>
+                    <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                        <Box sx={{ height: 400 }}>
+                            <Bar data={documentsBarChartData} options={barOptions} />
+                        </Box>
+                    </Paper>
+                </>
+            )}
+
         </Container>
     );
 }

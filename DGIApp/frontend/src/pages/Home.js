@@ -42,40 +42,44 @@ function Home() {
     return (
         <Container maxWidth="lg">
             <Box sx={{ my: 4 }}>
-                <Typography variant="h4" component="h1" gutterBottom>
+                <Typography
+                    variant="h4"
+                    component="h1"
+                    gutterBottom
+                    sx={{
+                        fontWeight: 600,
+                        color: 'primary.main',
+                        mb: 3
+                    }}
+                >
                     {getWelcomeMessage()}
                 </Typography>
 
-                <Paper
-                    sx={{
-                        p: 3,
-                        mb: 4,
-                        bgcolor: "#f9f9f9",
-                        borderRadius: 2,
-                    }}
-                >
-                    <Typography variant="body1" paragraph>
-                        Cette application permet aux utilisateurs de soumettre des demandes, de suivre leur
-                        progression à travers différents états et de gérer les attestations.
-                    </Typography>
-
-                    {!currentUser && (
-                        <Box sx={{ mt: 2 }}>
-                            <Button
-                                component={Link}
-                                to="/login"
-                                variant="contained"
-                                color="primary"
-                                sx={{ mr: 2 }}
-                            >
-                                Se Connecter
-                            </Button>
-                            <Button component={Link} to="/register" variant="outlined">
-                                S'inscrire
-                            </Button>
-                        </Box>
-                    )}
-                </Paper>
+                {!currentUser && (
+                    <Box sx={{
+                        mt: 2,
+                        display: 'flex',
+                        gap: 2
+                    }}>
+                        <Button
+                            component={Link}
+                            to="/login"
+                            variant="contained"
+                            color="primary"
+                            size="large"
+                            sx={{
+                                px: 4,
+                                py: 1.5,
+                                '&:hover': {
+                                    backgroundColor: 'primary.dark',
+                                    color: 'primary.contrastText'
+                                }
+                            }}
+                        >
+                            Se Connecter
+                        </Button>
+                    </Box>
+                )}
 
                 {currentUser && (
                     <Grid container spacing={3}>
@@ -107,6 +111,12 @@ function Home() {
                                                 to="/dashboard"
                                                 variant="contained"
                                                 fullWidth
+                                                sx={{
+                                                    '&:hover': {
+                                                        backgroundColor: 'primary.dark',
+                                                        color: 'primary.contrastText'
+                                                    }
+                                                }}
                                             >
                                                 Accéder au Tableau de Bord
                                             </Button>
@@ -146,6 +156,12 @@ function Home() {
                                                     to="/requests"
                                                     variant="contained"
                                                     fullWidth
+                                                    sx={{
+                                                        '&:hover': {
+                                                            backgroundColor: 'primary.dark',
+                                                            color: 'primary.contrastText'
+                                                        }
+                                                    }}
                                                 >
                                                     Voir les Demandes
                                                 </Button>
@@ -195,6 +211,12 @@ function Home() {
                                                     to="/attestation-list"
                                                     variant="contained"
                                                     fullWidth
+                                                    sx={{
+                                                        '&:hover': {
+                                                            backgroundColor: 'primary.dark',
+                                                            color: 'primary.contrastText'
+                                                        }
+                                                    }}
                                                 >
                                                     Voir les Attestations
                                                 </Button>
@@ -242,6 +264,12 @@ function Home() {
                                                 to="/users"
                                                 variant="contained"
                                                 fullWidth
+                                                sx={{
+                                                    '&:hover': {
+                                                        backgroundColor: 'primary.dark',
+                                                        color: 'primary.contrastText'
+                                                    }
+                                                }}
                                             >
                                                 Gérer les Utilisateurs
                                             </Button>

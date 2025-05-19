@@ -246,4 +246,123 @@ classDiagram
     AttestationController ..> Attestation : manages
     JwtUtils ..> UserDetailsImpl : authenticates
     PdfService ..> Request : generates
+```
+
+## Deployment Architecture Diagrams
+
+### Linux/Unix Deployment Architecture
+```mermaid
+graph TD
+    subgraph Internet
+        Client[Client Browser]
+    end
+    
+    subgraph "Server Host (Linux/Unix)"
+        subgraph "Nginx Layer"
+            Nginx[Nginx Reverse Proxy]
+            SSL[SSL Termination]
+        end
+        
+        subgraph "Application Layer"
+            FrontendContainer[Frontend Container<br>React + Nginx]
+            BackendContainer[Backend Container<br>Spring Boot]
+        end
+        
+        subgraph "Database Layer"
+            PostgreSQL[PostgreSQL Database]
+            Backups[Database Backups]
+        end
+        
+        subgraph "Security Layer"
+            Firewall[Host Firewall]
+            SecureConfig[Security Configurations]
+        end
+    end
+    
+    Client --> Nginx
+    Nginx --> SSL
+    SSL --> FrontendContainer
+    SSL --> BackendContainer
+    BackendContainer --> PostgreSQL
+    PostgreSQL --> Backups
+    Firewall --> Nginx
+    SecureConfig --> PostgreSQL
+    SecureConfig --> BackendContainer
+```
+
+### PostgreSQL Database Schema
+```mermaid
+erDiagram
+    USERS {
+        Long id PK
+        String username
+        String email
+        String password
+        ERole role
+        LocalDateTime createdAt
+        LocalDateTime updatedAt
+    }
+    
+    REQUESTS {
+        Long id PK
+        LocalDate dateEntree
+        String raisonSocialeNomsPrenom
+        String cin
+        String pmPp
+        String objet
+        LocalDate dateTraitement
+        String etat
+        String ifValue
+        String ice
+        String secteur
+        String motifRejet
+        String tp
+        String email
+        String gsm
+        String fix
+        String remarque
+        LocalDateTime createdAt
+        LocalDateTime updatedAt
+        Long agentId FK
+        Long creatorId FK
+    }
+    
+    ATTESTATIONS {
+        Long id PK
+        String ifValue
+        String cin
+        String nom
+        String prenom
+        String email
+        String phone
+        String type
+        String status
+        LocalDateTime createdAt
+        LocalDateTime updatedAt
+        Long creatorId FK
+    }
+    
+    USERS ||--o{ REQUESTS : "creates"
+    USERS ||--o{ REQUESTS : "processes as agent"
+    USERS ||--o{ ATTESTATIONS : "creates"
+```
+
+### Container Setup for PostgreSQL Configuration
+```mermaid
+flowchart TD
+    A[Start] --> B[Install Docker & Docker Compose]
+    B --> C[Install PostgreSQL]
+    C --> D[Configure PostgreSQL]
+    D --> E{Remote Access?}
+    E -->|Yes| F[Configure pg_hba.conf & postgresql.conf]
+    E -->|No| G[Keep Default Configuration]
+    F --> H[Create Database & User]
+    G --> H
+    H --> I[Configure Application .env]
+    I --> J[Update docker-compose.yml]
+    J --> K[Build & Start Application]
+    K --> L[Configure Nginx Reverse Proxy]
+    L --> M[Set Up SSL with Let's Encrypt]
+    M --> N[Create Backup Schedule]
+    N --> O[End]
 ``` 

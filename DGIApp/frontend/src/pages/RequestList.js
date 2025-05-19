@@ -835,6 +835,16 @@ function RequestList() {
                         onRowsPerPageChange={handleChangeRowsPerPage}
                         labelRowsPerPage="Lignes par page:"
                         labelDisplayedRows={({ from, to, count }) => `${from}–${to} sur ${count}`}
+                        sx={{
+                            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                                margin: 0
+                            },
+                            '.MuiTablePagination-toolbar': {
+                                minHeight: '52px',
+                                display: 'flex',
+                                alignItems: 'center'
+                            }
+                        }}
                     />
                 </Paper>
             ) : (

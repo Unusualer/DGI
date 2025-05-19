@@ -50,43 +50,6 @@ public class AuthController {
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         try {
-            // Check for hardcoded temporary password (just for testing)
-            if (loginRequest.getPassword().equals("password")) {
-                Optional<User> userOpt = userRepository.findByUsername(loginRequest.getUsername());
-                if (userOpt.isPresent()) {
-                    User user = userOpt.get();
-
-                    // Create UserDetailsImpl manually
-                    List<GrantedAuthority> authorities = List.of(
-                            new SimpleGrantedAuthority(user.getRole().name()));
-
-                    UserDetailsImpl userDetails = new UserDetailsImpl(
-                            user.getId(),
-                            user.getUsername(),
-                            user.getEmail(),
-                            user.getPassword(),
-                            authorities);
-
-                    // Generate JWT token
-                    String jwt = jwtUtils.generateJwtToken(userDetails);
-
-                    String role = userDetails.getAuthorities().stream()
-                            .map(item -> item.getAuthority())
-                            .findFirst()
-                            .orElse("");
-
-                    return ResponseEntity.ok(new JwtResponse(jwt,
-                            userDetails.getId(),
-                            userDetails.getUsername(),
-                            userDetails.getEmail(),
-                            role));
-                } else {
-                    return ResponseEntity
-                            .status(HttpStatus.UNAUTHORIZED)
-                            .body(new MessageResponse("Error: User not found"));
-                }
-            }
-
             // Regular authentication flow
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
