@@ -460,6 +460,41 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                                                 }}
                                             />
                                         </ListItemButton>
+                                        <ListItemButton
+                                            component={Link}
+                                            to="/create-attestation"
+                                            sx={{
+                                                pl: 4,
+                                                py: 1,
+                                                backgroundColor: location.pathname === "/create-attestation"
+                                                    ? (theme) => alpha(theme.palette.primary.main, 0.05)
+                                                    : "inherit",
+                                                '&:hover': {
+                                                    backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                    '& .MuiListItemIcon-root': {
+                                                        color: 'primary.main',
+                                                    },
+                                                    '& .MuiListItemText-primary': {
+                                                        color: 'primary.main',
+                                                    }
+                                                },
+                                                color: location.pathname === "/create-attestation"
+                                                    ? 'primary.main'
+                                                    : 'text.secondary',
+                                            }}
+                                        >
+                                            <ListItemIcon sx={{ minWidth: 30, color: 'inherit' }}>
+                                                <AddIcon fontSize="small" />
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary="Nouvelle attestation"
+                                                sx={{
+                                                    '& .MuiListItemText-primary': {
+                                                        fontSize: '0.85rem'
+                                                    }
+                                                }}
+                                            />
+                                        </ListItemButton>
                                         {currentUser?.role === "ROLE_MANAGER" && (
                                             <ListItemButton
                                                 component={Link}
