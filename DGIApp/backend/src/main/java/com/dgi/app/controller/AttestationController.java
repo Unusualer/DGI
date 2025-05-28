@@ -101,6 +101,11 @@ public class AttestationController {
             dto.setCreatorUsername(attestation.getCreator().getUsername());
         }
 
+        if (attestation.getDeliveredBy() != null) {
+            dto.setDeliveredById(attestation.getDeliveredBy().getId());
+            dto.setDeliveredByUsername(attestation.getDeliveredBy().getUsername());
+        }
+
         return dto;
     }
 
@@ -231,6 +236,10 @@ public class AttestationController {
             attestation.setStatus("livré");
             attestation.setUpdatedAt(LocalDateTime.now());
 
+            // Set the current user as the one who delivered the attestation
+            User currentUser = getCurrentUser();
+            attestation.setDeliveredBy(currentUser);
+
             Attestation updatedAttestation = attestationRepository.save(attestation);
 
             return ResponseEntity.ok(convertToDTO(updatedAttestation));
@@ -299,6 +308,7 @@ public class AttestationController {
                             .setMarginTop(20);
 
                     // Add rows to the table
+                    addTableRow(table, "Numero d'Ordre:", attestation.getId().toString(), bodyFont);
                     addTableRow(table, "Type d'attestation:", getTypeLabel(attestation.getType()), bodyFont);
                     addTableRow(table, "Status:", attestation.getStatus(), bodyFont);
                     addTableRow(table, "Nom:", attestation.getNom(), bodyFont);
@@ -364,7 +374,7 @@ public class AttestationController {
 
             // Set response headers first to enable download even if there's an exception
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=attestations.xlsx");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Tableau des Attestations.xlsx");
 
             // Set CORS headers explicitly for direct browser download
             response.setHeader("Access-Control-Allow-Origin", "*");

@@ -4,7 +4,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public class AttestationCreateRequest {
-    @NotBlank(message = "Le numéro IF est obligatoire")
     private String ifValue;
 
     @NotBlank(message = "Le CIN est obligatoire")

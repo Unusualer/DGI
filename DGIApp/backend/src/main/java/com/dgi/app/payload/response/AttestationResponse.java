@@ -16,6 +16,8 @@ public class AttestationResponse {
     private LocalDateTime updatedAt;
     private Long creatorId;
     private String creatorUsername;
+    private Long deliveredById;
+    private String deliveredByUsername;
 
     // Getters and Setters
     public Long getId() {
@@ -120,5 +122,21 @@ public class AttestationResponse {
 
     public void setCreatorUsername(String creatorUsername) {
         this.creatorUsername = creatorUsername;
+    }
+
+    public Long getDeliveredById() {
+        return deliveredById;
+    }
+
+    public void setDeliveredById(Long deliveredById) {
+        this.deliveredById = deliveredById;
+    }
+
+    public String getDeliveredByUsername() {
+        return deliveredByUsername;
+    }
+
+    public void setDeliveredByUsername(String deliveredByUsername) {
+        this.deliveredByUsername = deliveredByUsername;
     }
 }

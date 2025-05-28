@@ -22,11 +22,8 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.http.HttpStatus;
 
-import java.util.List;
 import java.util.Optional;
 
 @CrossOrigin(origins = "*", maxAge = 3600)

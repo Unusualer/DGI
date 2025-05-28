@@ -114,7 +114,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
             <DrawerHeader>
                 {open && (
                     <Logo>
-                        <img src="/DGI-removebg-preview.png" alt="DGI Logo" />
+                        <img src="/DGI-logo.png" alt="DGI Logo" />
                     </Logo>
                 )}
             </DrawerHeader>
@@ -460,41 +460,45 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                                                 }}
                                             />
                                         </ListItemButton>
-                                        <ListItemButton
-                                            component={Link}
-                                            to="/create-attestation"
-                                            sx={{
-                                                pl: 4,
-                                                py: 1,
-                                                backgroundColor: location.pathname === "/create-attestation"
-                                                    ? (theme) => alpha(theme.palette.primary.main, 0.05)
-                                                    : "inherit",
-                                                '&:hover': {
-                                                    backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                                                    '& .MuiListItemIcon-root': {
-                                                        color: 'primary.main',
-                                                    },
-                                                    '& .MuiListItemText-primary': {
-                                                        color: 'primary.main',
-                                                    }
-                                                },
-                                                color: location.pathname === "/create-attestation"
-                                                    ? 'primary.main'
-                                                    : 'text.secondary',
-                                            }}
-                                        >
-                                            <ListItemIcon sx={{ minWidth: 30, color: 'inherit' }}>
-                                                <AddIcon fontSize="small" />
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                primary="Nouvelle attestation"
-                                                sx={{
-                                                    '& .MuiListItemText-primary': {
-                                                        fontSize: '0.85rem'
-                                                    }
-                                                }}
-                                            />
-                                        </ListItemButton>
+                                        {(currentUser?.role === "ROLE_MANAGER" ||
+                                            currentUser?.role === "ROLE_PROCESSING" ||
+                                            currentUser?.role === "ROLE_FRONTDESK") && (
+                                                <ListItemButton
+                                                    component={Link}
+                                                    to="/create-attestation"
+                                                    sx={{
+                                                        pl: 4,
+                                                        py: 1,
+                                                        backgroundColor: location.pathname === "/create-attestation"
+                                                            ? (theme) => alpha(theme.palette.primary.main, 0.05)
+                                                            : "inherit",
+                                                        '&:hover': {
+                                                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                            '& .MuiListItemIcon-root': {
+                                                                color: 'primary.main',
+                                                            },
+                                                            '& .MuiListItemText-primary': {
+                                                                color: 'primary.main',
+                                                            }
+                                                        },
+                                                        color: location.pathname === "/create-attestation"
+                                                            ? 'primary.main'
+                                                            : 'text.secondary',
+                                                    }}
+                                                >
+                                                    <ListItemIcon sx={{ minWidth: 30, color: 'inherit' }}>
+                                                        <AddIcon fontSize="small" />
+                                                    </ListItemIcon>
+                                                    <ListItemText
+                                                        primary="Nouvelle attestation"
+                                                        sx={{
+                                                            '& .MuiListItemText-primary': {
+                                                                fontSize: '0.85rem'
+                                                            }
+                                                        }}
+                                                    />
+                                                </ListItemButton>
+                                            )}
                                         {currentUser?.role === "ROLE_MANAGER" && (
                                             <ListItemButton
                                                 component={Link}
@@ -590,7 +594,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                     <Divider sx={{ mb: 2 }} />
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Typography variant="caption" color="text.secondary">
-                            © {new Date().getFullYear()} DGI System v1.2
+                            © {new Date().getFullYear()} BACT System v2.0
                         </Typography>
                     </Box>
                 </Box>

@@ -207,70 +207,61 @@ function AttestationDetail() {
 
                 <Divider sx={{ mb: 3 }} />
 
-                <Grid container spacing={2}>
+                <Grid container spacing={3}>
                     <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle1" color="text.secondary">
-                            Numéro IF
-                        </Typography>
-                        <Typography variant="body1" gutterBottom>
-                            {attestation.ifValue || "N/A"}
-                        </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle1" color="text.secondary">
-                            CIN
-                        </Typography>
-                        <Typography variant="body1" gutterBottom>
-                            {attestation.cin || "N/A"}
-                        </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle1" color="text.secondary">
+                        <Typography variant="subtitle2" color="text.secondary">
                             Nom
                         </Typography>
                         <Typography variant="body1" gutterBottom>
-                            {attestation.nom || "N/A"}
+                            {attestation.nom}
                         </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle1" color="text.secondary">
+                        <Typography variant="subtitle2" color="text.secondary">
                             Prénom
                         </Typography>
                         <Typography variant="body1" gutterBottom>
-                            {attestation.prenom || "N/A"}
+                            {attestation.prenom}
                         </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle1" color="text.secondary">
-                            Email
+                        <Typography variant="subtitle2" color="text.secondary">
+                            CIN
                         </Typography>
                         <Typography variant="body1" gutterBottom>
-                            {attestation.email || "N/A"}
+                            {attestation.cin}
                         </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle1" color="text.secondary">
-                            Téléphone
+                        <Typography variant="subtitle2" color="text.secondary">
+                            IF
                         </Typography>
                         <Typography variant="body1" gutterBottom>
-                            {attestation.phone || "N/A"}
+                            {attestation.ifValue}
                         </Typography>
                     </Grid>
-                </Grid>
-
-                <Divider sx={{ my: 3 }} />
-
-                <Grid container spacing={2}>
+                    {attestation.email && (
+                        <Grid item xs={12} sm={6}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                                Email
+                            </Typography>
+                            <Typography variant="body1" gutterBottom>
+                                {attestation.email}
+                            </Typography>
+                        </Grid>
+                    )}
+                    {attestation.phone && (
+                        <Grid item xs={12} sm={6}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                                Téléphone
+                            </Typography>
+                            <Typography variant="body1" gutterBottom>
+                                {attestation.phone}
+                            </Typography>
+                        </Grid>
+                    )}
                     <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle1" color="text.secondary">
-                            Créée par
-                        </Typography>
-                        <Typography variant="body1" gutterBottom>
-                            {attestation.creatorUsername || "N/A"}
-                        </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle1" color="text.secondary">
+                        <Typography variant="subtitle2" color="text.secondary">
                             Date de création
                         </Typography>
                         <Typography variant="body1" gutterBottom>
@@ -278,13 +269,33 @@ function AttestationDetail() {
                         </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                        <Typography variant="subtitle1" color="text.secondary">
-                            Dernière mise à jour
+                        <Typography variant="subtitle2" color="text.secondary">
+                            Créé par
                         </Typography>
                         <Typography variant="body1" gutterBottom>
-                            {formatDate(attestation.updatedAt)}
+                            {attestation.creatorUsername}
                         </Typography>
                     </Grid>
+                    {attestation.status === "livré" && (
+                        <>
+                            <Grid item xs={12} sm={6}>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    Date de livraison
+                                </Typography>
+                                <Typography variant="body1" gutterBottom>
+                                    {formatDate(attestation.updatedAt)}
+                                </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    Livré par
+                                </Typography>
+                                <Typography variant="body1" gutterBottom>
+                                    {attestation.deliveredByUsername} {attestation.deliveredById ? `(ID: ${attestation.deliveredById})` : ''}
+                                </Typography>
+                            </Grid>
+                        </>
+                    )}
                 </Grid>
 
                 {attestation.status !== "livré" && (

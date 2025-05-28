@@ -51,6 +51,7 @@ function RequestList() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [searchQuery, setSearchQuery] = useState("");
+    const [idSearchQuery, setIdSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("Tous");
     const [typeFilter, setTypeFilter] = useState("Tous");
     const [startDate, setStartDate] = useState(null);
@@ -63,8 +64,14 @@ function RequestList() {
     const [showFilters, setShowFilters] = useState(false);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState("");
-    const [sortField, setSortField] = useState('id');
-    const [sortOrder, setSortOrder] = useState('asc');
+    const [orderBy, setOrderBy] = useState(() => {
+        const savedOrderBy = sessionStorage.getItem('requestListOrderBy');
+        return savedOrderBy || 'id';
+    });
+    const [order, setOrder] = useState(() => {
+        const savedOrder = sessionStorage.getItem('requestListOrder');
+        return savedOrder || 'desc';
+    });
 
     useEffect(() => {
         // Get current user
@@ -279,19 +286,21 @@ function RequestList() {
         setSnackbarOpen(false);
     };
 
-    const handleSort = (field) => {
-        if (sortField === field) {
-            // If already sorting by this field, toggle the order
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-        } else {
-            // If sorting by a new field, set it and default to ascending order
-            setSortField(field);
-            setSortOrder('asc');
-        }
+    const handleRequestSort = (property) => {
+        const isAsc = orderBy === property && order === 'asc';
+        const newOrder = isAsc ? 'desc' : 'asc';
+        setOrder(newOrder);
+        setOrderBy(property);
+        sessionStorage.setItem('requestListOrder', newOrder);
+        sessionStorage.setItem('requestListOrderBy', property);
     };
 
     // Filter requests based on all filter criteria
     const filteredRequests = requests.filter((request) => {
+        // ID search filter
+        const matchesId = idSearchQuery === "" ||
+            request.id.toString().includes(idSearchQuery);
+
         // Search query filter (existing)
         const matchesSearch = searchQuery === "" ||
             (request.raisonSocialeNomsPrenom &&
@@ -335,27 +344,27 @@ function RequestList() {
         }
 
         // Return true only if all filter conditions are met
-        return matchesSearch && matchesStatus && matchesType && matchesDateRange;
+        return matchesId && matchesSearch && matchesStatus && matchesType && matchesDateRange;
     });
 
     // Sort the filtered requests
     const sortedRequests = [...filteredRequests].sort((a, b) => {
         // Define sorting logic for different fields
-        switch (sortField) {
+        switch (orderBy) {
             case 'id':
-                return sortOrder === 'asc' ? a.id - b.id : b.id - a.id;
+                return order === 'asc' ? a.id - b.id : b.id - a.id;
 
             case 'dateEntree':
                 // Date comparison
                 const dateA = new Date(a.dateEntree);
                 const dateB = new Date(b.dateEntree);
-                return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+                return order === 'asc' ? dateA - dateB : dateB - dateA;
 
             case 'raisonSocialeNomsPrenom':
                 // String comparison for name/company
                 const nameA = a.raisonSocialeNomsPrenom?.toLowerCase() || '';
                 const nameB = b.raisonSocialeNomsPrenom?.toLowerCase() || '';
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? nameA.localeCompare(nameB)
                     : nameB.localeCompare(nameA);
 
@@ -363,25 +372,25 @@ function RequestList() {
                 // Combined CIN/IF/ICE comparison
                 const idA = a.cin || a.ifValue || a.ice || '';
                 const idB = b.cin || b.ifValue || b.ice || '';
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? idA.localeCompare(idB)
                     : idB.localeCompare(idA);
 
             case 'pmPp':
                 // Type comparison (PP/PM)
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? a.pmPp?.localeCompare(b.pmPp || '')
                     : b.pmPp?.localeCompare(a.pmPp || '');
 
             case 'objet':
                 // Subject comparison
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? (a.objet || '').localeCompare(b.objet || '')
                     : (b.objet || '').localeCompare(a.objet || '');
 
             case 'etat':
                 // Status comparison
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? a.etat?.localeCompare(b.etat || '')
                     : b.etat?.localeCompare(a.etat || '');
 
@@ -493,15 +502,30 @@ function RequestList() {
             {/* Search and Basic Filters */}
             <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
                 <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={6} md={6}>
+                    <Grid item xs={12} sm={6} md={4}>
                         <Box sx={{ display: "flex", alignItems: "center" }}>
                             <TextField
                                 fullWidth
                                 size="small"
-                                label="Recherche par CIN, IF ou ICE"
+                                label="Recherche par RS, CIN, IF ou ICE"
                                 variant="outlined"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                sx={{ mr: 1 }}
+                            />
+                            <SearchIcon color="action" />
+                        </Box>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6} md={2}>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Recherche par ID"
+                                variant="outlined"
+                                value={idSearchQuery}
+                                onChange={(e) => setIdSearchQuery(e.target.value)}
                                 sx={{ mr: 1 }}
                             />
                             <SearchIcon color="action" />
@@ -610,96 +634,96 @@ function RequestList() {
 
             {filteredRequests.length > 0 ? (
                 <Paper sx={{ width: "100%", overflow: "hidden" }}>
-                    <TableContainer sx={{ maxHeight: "calc(100vh - 300px)" }}>
+                    <TableContainer>
                         <Table stickyHeader aria-label="requests table">
                             <TableHead>
                                 <TableRow>
                                     <TableCell
-                                        onClick={() => handleSort('id')}
+                                        onClick={() => handleRequestSort('id')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             ID
-                                            {sortField === 'id' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'id' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('dateEntree')}
+                                        onClick={() => handleRequestSort('dateEntree')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Date de Soumission
-                                            {sortField === 'dateEntree' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'dateEntree' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('raisonSocialeNomsPrenom')}
+                                        onClick={() => handleRequestSort('raisonSocialeNomsPrenom')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Nom/Entreprise
-                                            {sortField === 'raisonSocialeNomsPrenom' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'raisonSocialeNomsPrenom' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('identifiant')}
+                                        onClick={() => handleRequestSort('identifiant')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Identifiant
-                                            {sortField === 'identifiant' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'identifiant' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('pmPp')}
+                                        onClick={() => handleRequestSort('pmPp')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Type
-                                            {sortField === 'pmPp' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'pmPp' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('objet')}
+                                        onClick={() => handleRequestSort('objet')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Objet
-                                            {sortField === 'objet' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'objet' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('etat')}
+                                        onClick={() => handleRequestSort('etat')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Statut
-                                            {sortField === 'etat' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'etat' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}

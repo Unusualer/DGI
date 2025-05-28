@@ -63,12 +63,20 @@ function AttestationList() {
     const [snackbarMessage, setSnackbarMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState(null);
     const [exporting, setExporting] = useState(false);
-    const [sortField, setSortField] = useState('id');
-    const [sortOrder, setSortOrder] = useState('asc');
+    const [orderBy, setOrderBy] = useState(() => {
+        const savedOrderBy = sessionStorage.getItem('attestationListOrderBy');
+        return savedOrderBy || 'id';
+    });
+    const [order, setOrder] = useState(() => {
+        const savedOrder = sessionStorage.getItem('attestationListOrder');
+        return savedOrder || 'desc';
+    });
 
     // Add state for attestation types
     const [attestationTypes, setAttestationTypes] = useState([]);
     const [typeLabelsMap, setTypeLabelsMap] = useState({});
+
+    const [idSearchQuery, setIdSearchQuery] = useState("");
 
     useEffect(() => {
         const user = AuthService.getCurrentUser();
@@ -186,15 +194,13 @@ function AttestationList() {
         setShowFilters(!showFilters);
     };
 
-    const handleSort = (field) => {
-        if (sortField === field) {
-            // If already sorting by this field, toggle the order
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-        } else {
-            // If sorting by a new field, set it and default to ascending order
-            setSortField(field);
-            setSortOrder('asc');
-        }
+    const handleAttestationSort = (property) => {
+        const isAsc = orderBy === property && order === 'asc';
+        const newOrder = isAsc ? 'desc' : 'asc';
+        setOrder(newOrder);
+        setOrderBy(property);
+        sessionStorage.setItem('attestationListOrder', newOrder);
+        sessionStorage.setItem('attestationListOrderBy', property);
     };
 
     const handleExportToExcel = () => {
@@ -205,7 +211,7 @@ function AttestationList() {
         // Create a new anchor element
         const link = document.createElement('a');
         link.href = '/api/attestations/exportExcel';
-        link.setAttribute('download', 'attestations.xlsx');
+        link.setAttribute('download', 'Tableau des Attestations.xlsx');
         link.setAttribute('target', '_blank');
         document.body.appendChild(link);
         link.click();
@@ -281,6 +287,10 @@ function AttestationList() {
 
     // Filter and search logic
     const filteredAttestations = attestations.filter(attestation => {
+        // ID search filter
+        const matchesId = idSearchQuery === "" ||
+            attestation.id.toString().includes(idSearchQuery);
+
         // Apply search query filter
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
@@ -312,58 +322,62 @@ function AttestationList() {
             if (attestationDate > endDate) return false;
         }
 
-        return true;
+        return matchesId &&
+            (statusFilter === "Tous" || attestation.status === statusFilter) &&
+            (typeFilter === "Tous" || attestation.type === typeFilter) &&
+            (!startDate || new Date(attestation.createdAt) >= new Date(startDate.setHours(0, 0, 0, 0))) &&
+            (!endDate || new Date(attestation.createdAt) <= new Date(endDate.setHours(23, 59, 59, 999)));
     });
 
     // Sort the filtered attestations
     const sortedAttestations = [...filteredAttestations].sort((a, b) => {
         // Define sorting logic for different fields
-        switch (sortField) {
+        switch (orderBy) {
             case 'id':
-                return sortOrder === 'asc' ? a.id - b.id : b.id - a.id;
+                return order === 'asc' ? a.id - b.id : b.id - a.id;
 
             case 'nom':
                 const nomA = a.nom?.toLowerCase() || '';
                 const nomB = b.nom?.toLowerCase() || '';
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? nomA.localeCompare(nomB)
                     : nomB.localeCompare(nomA);
 
             case 'prenom':
                 const prenomA = a.prenom?.toLowerCase() || '';
                 const prenomB = b.prenom?.toLowerCase() || '';
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? prenomA.localeCompare(prenomB)
                     : prenomB.localeCompare(prenomA);
 
             case 'cin':
                 const cinA = a.cin?.toLowerCase() || '';
                 const cinB = b.cin?.toLowerCase() || '';
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? cinA.localeCompare(cinB)
                     : cinB.localeCompare(cinA);
 
             case 'ifValue':
                 const ifA = a.ifValue?.toLowerCase() || '';
                 const ifB = b.ifValue?.toLowerCase() || '';
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? ifA.localeCompare(ifB)
                     : ifB.localeCompare(ifA);
 
             case 'type':
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? a.type?.localeCompare(b.type || '')
                     : b.type?.localeCompare(a.type || '');
 
             case 'status':
-                return sortOrder === 'asc'
+                return order === 'asc'
                     ? a.status?.localeCompare(b.status || '')
                     : b.status?.localeCompare(a.status || '');
 
             case 'createdAt':
                 const dateA = new Date(a.createdAt);
                 const dateB = new Date(b.createdAt);
-                return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+                return order === 'asc' ? dateA - dateB : dateB - dateA;
 
             default:
                 return 0;
@@ -429,7 +443,7 @@ function AttestationList() {
             {/* Search and Basic Filters */}
             <Paper elevation={2} sx={{ p: 2, mb: 3 }}>
                 <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={6} md={6}>
+                    <Grid item xs={12} sm={6} md={4}>
                         <Box sx={{ display: "flex", alignItems: "center" }}>
                             <TextField
                                 fullWidth
@@ -443,7 +457,20 @@ function AttestationList() {
                             <SearchIcon color="action" />
                         </Box>
                     </Grid>
-
+                    <Grid item xs={12} sm={6} md={2}>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Recherche par ID"
+                                variant="outlined"
+                                value={idSearchQuery}
+                                onChange={(e) => setIdSearchQuery(e.target.value)}
+                                sx={{ mr: 1 }}
+                            />
+                            <SearchIcon color="action" />
+                        </Box>
+                    </Grid>
                     <Grid item xs={12} sm={6} md={4}>
                         <FormControl size="small" fullWidth>
                             <InputLabel id="status-filter-label">Statut</InputLabel>
@@ -459,7 +486,6 @@ function AttestationList() {
                             </Select>
                         </FormControl>
                     </Grid>
-
                     <Grid item xs={12} sm={6} md={2}>
                         <Stack direction="row" spacing={1}>
                             <Button
@@ -570,104 +596,104 @@ function AttestationList() {
                             <TableHead>
                                 <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
                                     <TableCell
-                                        onClick={() => handleSort('id')}
+                                        onClick={() => handleAttestationSort('id')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             ID
-                                            {sortField === 'id' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'id' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('nom')}
+                                        onClick={() => handleAttestationSort('nom')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Nom
-                                            {sortField === 'nom' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'nom' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('prenom')}
+                                        onClick={() => handleAttestationSort('prenom')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Prénom
-                                            {sortField === 'prenom' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'prenom' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('cin')}
+                                        onClick={() => handleAttestationSort('cin')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             CIN
-                                            {sortField === 'cin' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'cin' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('ifValue')}
+                                        onClick={() => handleAttestationSort('ifValue')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             IF
-                                            {sortField === 'ifValue' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'ifValue' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('type')}
+                                        onClick={() => handleAttestationSort('type')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Type
-                                            {sortField === 'type' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'type' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('status')}
+                                        onClick={() => handleAttestationSort('status')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Statut
-                                            {sortField === 'status' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'status' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}
                                         </Box>
                                     </TableCell>
                                     <TableCell
-                                        onClick={() => handleSort('createdAt')}
+                                        onClick={() => handleAttestationSort('createdAt')}
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             Date Création
-                                            {sortField === 'createdAt' && (
-                                                sortOrder === 'asc' ?
+                                            {orderBy === 'createdAt' && (
+                                                order === 'asc' ?
                                                     <ArrowUpwardIcon fontSize="small" sx={{ ml: 0.5 }} /> :
                                                     <ArrowDownwardIcon fontSize="small" sx={{ ml: 0.5 }} />
                                             )}

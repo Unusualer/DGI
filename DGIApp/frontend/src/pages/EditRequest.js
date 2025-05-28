@@ -27,6 +27,7 @@ function EditRequest() {
     const [dateEntree, setDateEntree] = useState(new Date());
     const [raisonSocialeNomsPrenom, setRaisonSocialeNomsPrenom] = useState("");
     const [cin, setCin] = useState("");
+    const [cinError, setCinError] = useState("");
     const [ifValue, setIfValue] = useState("");
     const [ice, setIce] = useState("");
     const [pmPp, setPmPp] = useState("PP");
@@ -252,6 +253,20 @@ function EditRequest() {
     // Helper to check if at least one identifier is provided
     const hasIdentifier = () => cin || ifValue || ice;
 
+    const validateCin = (value) => {
+        const cinPattern = /^[A-Za-z]{1,2}\d{4,6}[A-Za-z]{0,2}$/;
+        if (value && !cinPattern.test(value)) {
+            return "Format CIN invalide: 1-2 lettres + 4-6 chiffres + 0-2 lettres";
+        }
+        return "";
+    };
+
+    const handleCinChange = (e) => {
+        const value = e.target.value;
+        setCin(value);
+        setCinError(validateCin(value));
+    };
+
     if (initialLoading) {
         return (
             <Container maxWidth="lg" sx={{ mt: 4, textAlign: "center" }}>
@@ -356,9 +371,9 @@ function EditRequest() {
                                     margin="normal"
                                     label="CIN"
                                     value={cin}
-                                    onChange={(e) => setCin(e.target.value)}
-                                    helperText={submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : ""}
-                                    error={submitted && !hasIdentifier()}
+                                    onChange={handleCinChange}
+                                    helperText={cinError || (submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : "")}
+                                    error={!!cinError || (submitted && !hasIdentifier())}
                                 />
                             </Grid>
 

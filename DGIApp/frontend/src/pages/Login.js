@@ -117,7 +117,7 @@ function Login() {
                                         }}
                                     >
                                         <img
-                                            src="/DGI-removebg-preview.png"
+                                            src="/logo.png"
                                             alt="DGI Logo"
                                             style={{
                                                 height: '200px',

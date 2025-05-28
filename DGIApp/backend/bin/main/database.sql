@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS requests (
 
 CREATE TABLE IF NOT EXISTS attestations (
     id SERIAL PRIMARY KEY,
-    IF VARCHAR(255) NOT NULL,
+    IF VARCHAR(255),
     cin VARCHAR(255) NOT NULL,
     nom VARCHAR(255) NOT NULL,
     prenom VARCHAR(255) NOT NULL,
@@ -48,7 +48,8 @@ CREATE TABLE IF NOT EXISTS attestations (
     status VARCHAR(255) NOT NULL DEFAULT 'déposé',
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
-    creator_id BIGINT NOT NULL REFERENCES users(id)
+    creator_id BIGINT NOT NULL REFERENCES users(id),
+    delivered_by BIGINT REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS type_attestations (
@@ -115,6 +116,18 @@ BEGIN
         WHERE table_name = 'attestations' AND column_name = 'status'
     ) THEN
         ALTER TABLE attestations ADD COLUMN status VARCHAR(255) NOT NULL DEFAULT 'déposé';
+    END IF;
+END
+$$;
+
+-- Add delivered_by column to attestations table if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'attestations' AND column_name = 'delivered_by'
+    ) THEN
+        ALTER TABLE attestations ADD COLUMN delivered_by BIGINT REFERENCES users(id);
     END IF;
 END
 $$; 

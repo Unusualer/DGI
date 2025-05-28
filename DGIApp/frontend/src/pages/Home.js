@@ -70,9 +70,11 @@ function Home() {
                             sx={{
                                 px: 4,
                                 py: 1.5,
+                                transition: 'all 0.2s',
                                 '&:hover': {
-                                    backgroundColor: 'primary.dark',
-                                    color: 'primary.contrastText'
+                                    backgroundColor: '#00224d',
+                                    color: '#fff',
+                                    border: '2px solid #003671',
                                 }
                             }}
                         >

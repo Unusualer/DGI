@@ -26,6 +26,7 @@ function CreateAttestation() {
     const navigate = useNavigate();
     const [ifValue, setIfValue] = useState("");
     const [cin, setCin] = useState("");
+    const [cinError, setCinError] = useState("");
     const [nom, setNom] = useState("");
     const [prenom, setPrenom] = useState("");
     const [email, setEmail] = useState("");
@@ -83,6 +84,20 @@ function CreateAttestation() {
         }
     };
 
+    const validateCin = (value) => {
+        const cinPattern = /^[A-Za-z]{1,2}\d{4,6}[A-Za-z]{0,2}$/;
+        if (value && !cinPattern.test(value)) {
+            return "Format CIN invalide: 1-2 lettres + 4-6 chiffres + 0-2 lettres";
+        }
+        return "";
+    };
+
+    const handleCinChange = (e) => {
+        const value = e.target.value;
+        setCin(value);
+        setCinError(validateCin(value));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -91,7 +106,7 @@ function CreateAttestation() {
 
         try {
             // Validate form
-            if (!ifValue || !cin || !nom || !prenom || !type) {
+            if (!cin || !nom || !prenom || !type) {
                 setError("Veuillez remplir tous les champs obligatoires");
                 setLoading(false);
                 return;
@@ -120,7 +135,7 @@ function CreateAttestation() {
             }
 
             // Set success message
-            setSuccess("L'attestation a été créée avec succès");
+            setSuccess(`Attestation créée avec succès, ID: ${response.id}`);
 
             // Reset form
             setIfValue("");
@@ -131,10 +146,10 @@ function CreateAttestation() {
             setPhone("");
             setType("");
 
-            // Navigate to attestation list after successful creation
-            setTimeout(() => {
-                navigate("/attestation-list");
-            }, 3000);
+            // Remove automatic navigation
+            // setTimeout(() => {
+            //     navigate("/attestation-list");
+            // }, 3000);
 
         } catch (err) {
             console.error("Error creating attestation:", err);
@@ -197,7 +212,6 @@ function CreateAttestation() {
                     <Grid container spacing={2}>
                         <Grid item xs={12} sm={6}>
                             <TextField
-                                required
                                 fullWidth
                                 label="Numéro IF"
                                 value={ifValue}
@@ -212,9 +226,11 @@ function CreateAttestation() {
                                 fullWidth
                                 label="CIN"
                                 value={cin}
-                                onChange={(e) => setCin(e.target.value)}
+                                onChange={handleCinChange}
                                 margin="normal"
                                 variant="outlined"
+                                error={!!cinError}
+                                helperText={cinError}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>

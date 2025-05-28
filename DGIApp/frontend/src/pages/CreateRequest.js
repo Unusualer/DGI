@@ -29,10 +29,13 @@ function CreateRequest() {
     const [dateEntree, setDateEntree] = useState(new Date());
     const [raisonSocialeNomsPrenom, setRaisonSocialeNomsPrenom] = useState("");
     const [cin, setCin] = useState("");
+    const [cinError, setCinError] = useState("");
     const [ifValue, setIfValue] = useState("");
     const [ice, setIce] = useState("");
     const [pmPp, setPmPp] = useState("PP");
     const [objet, setObjet] = useState("");
+    const [objetType, setObjetType] = useState("");
+    const [customObjet, setCustomObjet] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -63,7 +66,7 @@ function CreateRequest() {
         }
 
         // Require objet field
-        if (!objet) {
+        if (!objetType && !customObjet) {
             setError("L'objet de la demande est obligatoire");
             setLoading(false);
             return;
@@ -79,7 +82,7 @@ function CreateRequest() {
             ifValue,
             ice,
             pmPp,
-            objet
+            objet: objetType === "autre" ? customObjet : objetType
         };
 
         try {
@@ -102,6 +105,8 @@ function CreateRequest() {
             setIce("");
             setPmPp("PP");
             setObjet("");
+            setObjetType("");
+            setCustomObjet("");
             setDateEntree(new Date());
             setSubmitted(false);
         } catch (error) {
@@ -125,6 +130,20 @@ function CreateRequest() {
 
     // Helper to check if at least one identifier is provided
     const hasIdentifier = () => cin || ifValue || ice;
+
+    const validateCin = (value) => {
+        const cinPattern = /^[A-Za-z]{1,2}\d{4,6}[A-Za-z]{0,2}$/;
+        if (value && !cinPattern.test(value)) {
+            return "Format CIN invalide: 1-2 lettres + 4-6 chiffres + 0-2 lettres";
+        }
+        return "";
+    };
+
+    const handleCinChange = (e) => {
+        const value = e.target.value;
+        setCin(value);
+        setCinError(validateCin(value));
+    };
 
     // Function to handle printing the receipt
     const handlePrintReceipt = () => {
@@ -225,9 +244,9 @@ function CreateRequest() {
                                 margin="normal"
                                 label="CIN"
                                 value={cin}
-                                onChange={(e) => setCin(e.target.value)}
-                                helperText={submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : ""}
-                                error={submitted && !hasIdentifier()}
+                                onChange={handleCinChange}
+                                helperText={cinError || (submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : "")}
+                                error={!!cinError || (submitted && !hasIdentifier())}
                             />
                         </Grid>
 
@@ -256,19 +275,48 @@ function CreateRequest() {
                         </Grid>
 
                         <Grid item xs={12}>
-                            <TextField
-                                fullWidth
-                                label="Objet"
-                                value={objet}
-                                onChange={(e) => setObjet(e.target.value)}
-
-                                rows={4}
-                                required
-                                error={submitted && !objet}
-                                helperText={submitted && !objet ? "L'objet de la demande est obligatoire" : ""}
-                                placeholder="Décrivez l'objet de la demande en détail"
-                            />
+                            <FormControl fullWidth required error={submitted && !objetType && !customObjet}>
+                                <InputLabel id="objet-type-label">Type d'objet</InputLabel>
+                                <Select
+                                    labelId="objet-type-label"
+                                    value={objetType}
+                                    label="Type d'objet"
+                                    onChange={(e) => {
+                                        setObjetType(e.target.value);
+                                        if (e.target.value !== "autre") {
+                                            setObjet(e.target.value);
+                                        }
+                                    }}
+                                >
+                                    <MenuItem value="création">Création</MenuItem>
+                                    <MenuItem value="modification">Modification</MenuItem>
+                                    <MenuItem value="autre">Autre</MenuItem>
+                                </Select>
+                                {submitted && !objetType && !customObjet && (
+                                    <FormHelperText>L'objet de la demande est obligatoire</FormHelperText>
+                                )}
+                            </FormControl>
                         </Grid>
+
+                        {objetType === "autre" && (
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Objet personnalisé"
+                                    value={customObjet}
+                                    onChange={(e) => {
+                                        setCustomObjet(e.target.value);
+                                        setObjet(e.target.value);
+                                    }}
+                                    multiline
+                                    rows={4}
+                                    required
+                                    error={submitted && !customObjet}
+                                    helperText={submitted && !customObjet ? "Veuillez spécifier l'objet de la demande" : ""}
+                                    placeholder="Décrivez l'objet de la demande en détail"
+                                />
+                            </Grid>
+                        )}
 
                         <Grid item xs={12}>
                             <Button
@@ -276,7 +324,7 @@ function CreateRequest() {
                                 variant="contained"
                                 color="primary"
                                 size="large"
-                                disabled={loading || !raisonSocialeNomsPrenom || !hasIdentifier() || !objet}
+                                disabled={loading || !raisonSocialeNomsPrenom || !hasIdentifier() || !objetType || (objetType === "autre" && !customObjet)}
                             >
                                 {loading ? "Création en cours..." : "Créer la Demande"}
                             </Button>

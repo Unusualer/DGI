@@ -267,7 +267,6 @@ function TypeAttestationList() {
                         <Table aria-label="types d'attestation table">
                             <TableHead>
                                 <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                                    <TableCell>ID</TableCell>
                                     <TableCell>Label</TableCell>
                                     <TableCell>Date de création</TableCell>
                                     <TableCell align="center">Actions</TableCell>
@@ -276,7 +275,6 @@ function TypeAttestationList() {
                             <TableBody>
                                 {paginatedTypes.map((type) => (
                                     <TableRow key={type.id} hover>
-                                        <TableCell>{type.id}</TableCell>
                                         <TableCell>{type.label}</TableCell>
                                         <TableCell>
                                             {new Date(type.createdAt).toLocaleDateString('fr-FR')}

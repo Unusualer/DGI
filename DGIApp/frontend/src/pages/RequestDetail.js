@@ -641,12 +641,19 @@ function RequestDetail() {
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <TextField
-                                            fullWidth
-                                            label="Secteur"
-                                            value={secteur}
-                                            onChange={(e) => setSecteur(e.target.value)}
-                                        />
+                                        <FormControl fullWidth>
+                                            <InputLabel>Secteur</InputLabel>
+                                            <Select
+                                                value={secteur}
+                                                label="Secteur"
+                                                onChange={(e) => setSecteur(e.target.value)}
+                                            >
+                                                <MenuItem value="S1-P1">S1-P1</MenuItem>
+                                                <MenuItem value="S1-P2">S1-P2</MenuItem>
+                                                <MenuItem value="S2-P1">S2-P1</MenuItem>
+                                                <MenuItem value="S2-P2">S2-P2</MenuItem>
+                                            </Select>
+                                        </FormControl>
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <TextField

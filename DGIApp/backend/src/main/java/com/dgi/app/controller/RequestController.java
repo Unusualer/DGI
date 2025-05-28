@@ -662,7 +662,7 @@ public class RequestController {
 
             // Set response headers
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=requests.xlsx");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Tableau de TP.xlsx");
 
             // Set CORS headers explicitly
             response.setHeader("Access-Control-Allow-Origin", "*");
@@ -757,7 +757,7 @@ public class RequestController {
 
             // Set response headers first to enable download even if there's an exception
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=requests.xlsx");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Tableau de TP.xlsx");
 
             // Set CORS headers explicitly for direct browser download
             response.setHeader("Access-Control-Allow-Origin", "*");
@@ -856,7 +856,7 @@ public class RequestController {
 
             // Set response headers first to enable download even if there's an exception
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=requests.xlsx");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Tableau de TP.xlsx");
 
             // Set CORS headers explicitly for direct browser download
             response.setHeader("Access-Control-Allow-Origin", "*");

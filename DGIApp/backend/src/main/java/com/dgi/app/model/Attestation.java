@@ -44,6 +44,10 @@ public class Attestation {
     @JoinColumn(name = "creator_id", nullable = false)
     private User creator;
 
+    @ManyToOne
+    @JoinColumn(name = "delivered_by")
+    private User deliveredBy;
+
     public Attestation() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
@@ -145,5 +149,13 @@ public class Attestation {
 
     public void setCreator(User creator) {
         this.creator = creator;
+    }
+
+    public User getDeliveredBy() {
+        return deliveredBy;
+    }
+
+    public void setDeliveredBy(User deliveredBy) {
+        this.deliveredBy = deliveredBy;
     }
 }

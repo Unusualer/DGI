@@ -159,7 +159,7 @@ function AppBar({ currentUser, logOut, toggleSidebar, sidebarOpen }) {
                         letterSpacing: '0.5px'
                     }}
                 >
-                    Gestion DGI
+                    Gestion BACT
                 </Typography>
 
                 {currentUser ? (
