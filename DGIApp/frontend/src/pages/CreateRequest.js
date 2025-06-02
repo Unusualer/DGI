@@ -58,13 +58,6 @@ function CreateRequest() {
             return;
         }
 
-        // Require at least one identifier: CIN, IF, or ICE
-        if (!cin && !ifValue && !ice) {
-            setError("Au moins un identifiant (CIN, IF ou ICE) est obligatoire");
-            setLoading(false);
-            return;
-        }
-
         // Require objet field
         if (!objetType && !customObjet) {
             setError("L'objet de la demande est obligatoire");
@@ -128,13 +121,10 @@ function CreateRequest() {
         }
     };
 
-    // Helper to check if at least one identifier is provided
-    const hasIdentifier = () => cin || ifValue || ice;
-
     const validateCin = (value) => {
-        const cinPattern = /^[A-Za-z]{1,2}\d{4,6}[A-Za-z]{0,2}$/;
+        const cinPattern = /^[A-Za-z]{1,2}\d{1,6}[A-Za-z]{0,2}$/;
         if (value && !cinPattern.test(value)) {
-            return "Format CIN invalide: 1-2 lettres + 4-6 chiffres + 0-2 lettres";
+            return "Format CIN invalide: 1-2 lettres + 1-6 chiffres + 0-2 lettres";
         }
         return "";
     };
@@ -241,36 +231,31 @@ function CreateRequest() {
                         <Grid item xs={12} sm={4}>
                             <TextField
                                 fullWidth
-                                margin="normal"
                                 label="CIN"
                                 value={cin}
                                 onChange={handleCinChange}
-                                helperText={cinError || (submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : "")}
-                                error={!!cinError || (submitted && !hasIdentifier())}
+                                helperText={cinError || "Carte d'identité nationale"}
+                                error={!!cinError}
                             />
                         </Grid>
 
                         <Grid item xs={12} sm={4}>
                             <TextField
                                 fullWidth
-                                margin="normal"
                                 label="IF"
                                 value={ifValue}
                                 onChange={(e) => setIfValue(e.target.value)}
-                                helperText={submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : ""}
-                                error={submitted && !hasIdentifier()}
+                                helperText="Numéro d'identification fiscale (IF)"
                             />
                         </Grid>
 
                         <Grid item xs={12} sm={4}>
                             <TextField
                                 fullWidth
-                                margin="normal"
                                 label="ICE"
                                 value={ice}
                                 onChange={(e) => setIce(e.target.value)}
-                                helperText={submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : ""}
-                                error={submitted && !hasIdentifier()}
+                                helperText="Identifiant Commun de l'Entreprise"
                             />
                         </Grid>
 
@@ -288,8 +273,8 @@ function CreateRequest() {
                                         }
                                     }}
                                 >
-                                    <MenuItem value="création">Création</MenuItem>
-                                    <MenuItem value="modification">Modification</MenuItem>
+                                    <MenuItem value="Création">Création</MenuItem>
+                                    <MenuItem value="Modification">Modification</MenuItem>
                                     <MenuItem value="autre">Autre</MenuItem>
                                 </Select>
                                 {submitted && !objetType && !customObjet && (
@@ -324,7 +309,7 @@ function CreateRequest() {
                                 variant="contained"
                                 color="primary"
                                 size="large"
-                                disabled={loading || !raisonSocialeNomsPrenom || !hasIdentifier() || !objetType || (objetType === "autre" && !customObjet)}
+                                disabled={loading || !raisonSocialeNomsPrenom || !objetType || (objetType === "autre" && !customObjet)}
                             >
                                 {loading ? "Création en cours..." : "Créer la Demande"}
                             </Button>

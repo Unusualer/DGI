@@ -42,6 +42,7 @@ function EditRequest() {
     const [timeLeft, setTimeLeft] = useState(0);
     const [request, setRequest] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
+    const [secteur, setSecteur] = useState("");
 
     useEffect(() => {
         // Get current user
@@ -118,6 +119,7 @@ function EditRequest() {
             setIce(response.data.ice || "");
             setPmPp(response.data.pmPp || "PP");
             setObjet(response.data.objet || "");
+            setSecteur(response.data.secteur || "");
 
             // Get current user
             const user = AuthService.getCurrentUser();
@@ -215,7 +217,8 @@ function EditRequest() {
             ifValue,
             ice,
             pmPp,
-            objet
+            objet,
+            secteur
         };
 
         try {
@@ -254,9 +257,9 @@ function EditRequest() {
     const hasIdentifier = () => cin || ifValue || ice;
 
     const validateCin = (value) => {
-        const cinPattern = /^[A-Za-z]{1,2}\d{4,6}[A-Za-z]{0,2}$/;
+        const cinPattern = /^[A-Za-z]{1,2}\d{1,6}[A-Za-z]{0,2}$/;
         if (value && !cinPattern.test(value)) {
-            return "Format CIN invalide: 1-2 lettres + 4-6 chiffres + 0-2 lettres";
+            return "Format CIN invalide: 1-2 lettres + 1-6 chiffres + 0-2 lettres";
         }
         return "";
     };
@@ -399,6 +402,71 @@ function EditRequest() {
                                     helperText={submitted && !hasIdentifier() ? "Au moins un identifiant est obligatoire" : ""}
                                     error={submitted && !hasIdentifier()}
                                 />
+                            </Grid>
+
+                            <Grid item xs={12} sm={6}>
+                                <FormControl fullWidth>
+                                    <InputLabel>Secteur</InputLabel>
+                                    <Select
+                                        value={secteur}
+                                        label="Secteur"
+                                        onChange={(e) => setSecteur(e.target.value)}
+                                    >
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES - 2 TANGER 2">1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES - 2 TANGER 2</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB1PM-SERV1PM-TANGER">1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB1PM-SERV1PM-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB1PM-SERV2PM-TANGER">1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB1PM-SERV2PM-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB2PM-SERV1PM-TANGER">1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB2PM-SERV1PM-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV1PM-TANGER">1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV1PM-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV2PM-TANGER">1ER SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV2PM-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS SUB1PP-SERV3PP-TANGER">1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS SUB1PP-SERV3PP-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS SUB2PP-SERV3PP-TANGER">1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS SUB2PP-SERV3PP-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV1PP-TANGER">1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV2PP-TANGER">1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV2PP-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV1PP-TANGER">1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV2PP-TANGER">1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV2PP-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB3PP-SERV1PP-TANGER">1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB3PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB3PP-SERV3PP-TANGER">1ER SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB3PP-SERV3PP-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS SUB1PP-SERV3PP-TANGER">2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS SUB1PP-SERV3PP-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS SUB2PP-SERV3PP-TANGER">2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS SUB2PP-SERV3PP-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB1PM-SERV1PM-TANGER">2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB1PM-SERV1PM-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB1PM-SERV2PM-TANGER">2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB1PM-SERV2PM-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB2PM-SERV1PM-TANGER">2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB2PM-SERV1PM-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB2PM-SERV2PM-TANGER">2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB2PM-SERV2PM-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV1PM-TANGER">2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV1PM-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV2PM-TANGER">2EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV2PM-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV1PP-TANGER">2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV2PP-TANGER">2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV2PP-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV1PP-TANGER">2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV2PP-TANGER">2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV2PP-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB3PP-SERV1PP-TANGER">2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB3PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB3PP-SERV3PP-TANGER">2EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB3PP-SERV3PP-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB1PM-SERV2PM-TANGER">3EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB1PM-SERV2PM-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB2PM-SERV1PM-TANGER">3EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB2PM-SERV1PM-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB2PM-SERV2PM-TANGER">3EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB2PM-SERV2PM-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV1PM-TANGER">3EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV1PM-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV2PM-TANGER">3EME SECTEUR DE LA FISCALITE DES PERSONNES MORALES-SUB3PM-SERV2PM-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS SUB2PP-SERV3PP-TANGER">3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS SUB2PP-SERV3PP-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV1PP-TANGER">3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV2PP-TANGER">3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB1PP-SERV2PP-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV1PP-TANGER">3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV2PP-TANGER">3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB2PP-SERV2PP-TANGER</MenuItem>
+                                        <MenuItem value="3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB3PP-SERV1PP-TANGER">3EME SECTEUR DE LA FISCALITE DES PROFESSIONNELS-SUB3PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="CENTRE REGIONAL D'INVESTISSEMENT DE LA DR DE TANGER">CENTRE REGIONAL D'INVESTISSEMENT DE LA DR DE TANGER</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES GRANDES ENTREPRISES-SUB1PM-SERV1PM-TANGER">SECTEUR DE LA FISCALITE DES GRANDES ENTREPRISES-SUB1PM-SERV1PM-TANGER</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PARTICULIERS - FAHS ANJRA">SECTEUR DE LA FISCALITE DES PARTICULIERS - FAHS ANJRA</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PARTICULIERS SUB1PP-SERV1PP-TANGER">SECTEUR DE LA FISCALITE DES PARTICULIERS SUB1PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PARTICULIERS SUB1PP-SERV2PP-TANGER">SECTEUR DE LA FISCALITE DES PARTICULIERS SUB1PP-SERV2PP-TANGER</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PARTICULIERS SUB1PP-SERV3PP-TANGER">SECTEUR DE LA FISCALITE DES PARTICULIERS SUB1PP-SERV3PP-TANGER</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PARTICULIERS SUB2PP-SERV1PP-TANGER">SECTEUR DE LA FISCALITE DES PARTICULIERS SUB2PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PARTICULIERS SUB2PP-SERV2PP-TANGER">SECTEUR DE LA FISCALITE DES PARTICULIERS SUB2PP-SERV2PP-TANGER</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PARTICULIERS SUB2PP-SERV3PP-TANGER">SECTEUR DE LA FISCALITE DES PARTICULIERS SUB2PP-SERV3PP-TANGER</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PARTICULIERS SUB3PP-SERV1PP-TANGER">SECTEUR DE LA FISCALITE DES PARTICULIERS SUB3PP-SERV1PP-TANGER</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PARTICULIERS SUB3PP-SERV3PP-TANGER">SECTEUR DE LA FISCALITE DES PARTICULIERS SUB3PP-SERV3PP-TANGER</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PERSONNES MORALES - FAHS ANJRA">SECTEUR DE LA FISCALITE DES PERSONNES MORALES - FAHS ANJRA</MenuItem>
+                                        <MenuItem value="SECTEUR DE LA FISCALITE DES PROFESSIONNELS- FAHS ANJRA">SECTEUR DE LA FISCALITE DES PROFESSIONNELS- FAHS ANJRA</MenuItem>
+                                        <MenuItem value="SECTION D'ASSISTANCE TECHNIQUE ET DE TRAITEMENT DES DEMANDES - TANGER">SECTION D'ASSISTANCE TECHNIQUE ET DE TRAITEMENT DES DEMANDES - TANGER</MenuItem>
+                                    </Select>
+                                </FormControl>
                             </Grid>
 
                             <Grid item xs={12}>

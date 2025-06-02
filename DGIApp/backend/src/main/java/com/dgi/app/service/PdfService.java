@@ -77,6 +77,7 @@ public class PdfService {
                         addTableRow(table, "CIN:", request.getCin() != null ? request.getCin() : "N/A", bodyFont);
                         addTableRow(table, "IF:", request.getIfValue() != null ? request.getIfValue() : "N/A",
                                         bodyFont);
+                        addTableRow(table, "ICE:", request.getIce() != null ? request.getIce() : "N/A", bodyFont);
 
                         // Add the table to the document
                         document.add(table);

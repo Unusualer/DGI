@@ -2,11 +2,10 @@ package com.dgi.app.payload.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.AssertTrue;
 
 public class AttestationCreateRequest {
     private String ifValue;
-
-    @NotBlank(message = "Le CIN est obligatoire")
     private String cin;
 
     @NotBlank(message = "Le nom est obligatoire")
@@ -22,6 +21,12 @@ public class AttestationCreateRequest {
 
     @NotBlank(message = "Le type d'attestation est obligatoire")
     private String type;
+
+    @AssertTrue(message = "Au moins un des identifiants (IF ou CIN) doit être fourni")
+    private boolean isEitherIfOrCinProvided() {
+        return (ifValue != null && !ifValue.trim().isEmpty()) ||
+                (cin != null && !cin.trim().isEmpty());
+    }
 
     // Getters and Setters
     public String getIfValue() {

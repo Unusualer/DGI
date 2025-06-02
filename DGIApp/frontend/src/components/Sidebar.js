@@ -594,7 +594,7 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                     <Divider sx={{ mb: 2 }} />
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Typography variant="caption" color="text.secondary">
-                            © {new Date().getFullYear()} BACT System v2.0
+                            © {new Date().getFullYear()} BATC System v2.0
                         </Typography>
                     </Box>
                 </Box>

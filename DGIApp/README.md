@@ -1,4 +1,4 @@
-# Gestion BACT System
+# Gestion BATC System
 
 A full-stack application for managing document requests with role-based state transitions and ownership tracking for administrative processes.
 

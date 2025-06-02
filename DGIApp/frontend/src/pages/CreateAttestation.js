@@ -37,6 +37,7 @@ function CreateAttestation() {
     const [success, setSuccess] = useState(null);
     const [attestationId, setAttestationId] = useState(null);
     const [printingReceipt, setPrintingReceipt] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
 
     // Add state for attestation types
     const [attestationTypes, setAttestationTypes] = useState([]);
@@ -85,9 +86,9 @@ function CreateAttestation() {
     };
 
     const validateCin = (value) => {
-        const cinPattern = /^[A-Za-z]{1,2}\d{4,6}[A-Za-z]{0,2}$/;
+        const cinPattern = /^[A-Za-z]{1,2}\d{1,6}[A-Za-z]{0,2}$/;
         if (value && !cinPattern.test(value)) {
-            return "Format CIN invalide: 1-2 lettres + 4-6 chiffres + 0-2 lettres";
+            return "Format CIN invalide: 1-2 lettres + 1-6 chiffres + 0-2 lettres";
         }
         return "";
     };
@@ -103,11 +104,12 @@ function CreateAttestation() {
         setLoading(true);
         setError(null);
         setSuccess(null);
+        setSubmitted(true);
 
         try {
-            // Validate form
-            if (!cin || !nom || !prenom || !type) {
-                setError("Veuillez remplir tous les champs obligatoires");
+            // Validate form - require either IF or CIN
+            if ((!ifValue && !cin) || !nom || !prenom || !type) {
+                setError("Veuillez remplir tous les champs obligatoires (IF ou CIN requis)");
                 setLoading(false);
                 return;
             }
@@ -218,19 +220,22 @@ function CreateAttestation() {
                                 onChange={(e) => setIfValue(e.target.value)}
                                 margin="normal"
                                 variant="outlined"
+                                required={!cin}
+                                error={submitted && !ifValue && !cin}
+                                helperText={submitted && !ifValue && !cin ? "IF ou CIN requis" : ""}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <TextField
-                                required
                                 fullWidth
                                 label="CIN"
                                 value={cin}
                                 onChange={handleCinChange}
                                 margin="normal"
                                 variant="outlined"
-                                error={!!cinError}
-                                helperText={cinError}
+                                required={!ifValue}
+                                error={!!cinError || (submitted && !cin && !ifValue)}
+                                helperText={cinError || (submitted && !cin && !ifValue ? "IF ou CIN requis" : "")}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6}>

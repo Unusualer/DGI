@@ -485,13 +485,6 @@ public class RequestController {
     @PreAuthorize("hasAnyAuthority('ROLE_FRONTDESK', 'ROLE_MANAGER', 'ROLE_PROCESSING')")
     public ResponseEntity<?> createNewRequest(@Valid @RequestBody RequestCreateRequest createRequest) {
         try {
-            // Validate that at least one identifier is provided
-            if (isEmpty(createRequest.getCin()) && isEmpty(createRequest.getIfValue())
-                    && isEmpty(createRequest.getIce())) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new MessageResponse("Error: At least one identifier (CIN, IF, or ICE) must be provided"));
-            }
-
             // Get current user
             User currentUser = getCurrentUser();
 
