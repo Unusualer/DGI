@@ -153,6 +153,10 @@ function Dashboard() {
         livré: 0,
         byType: {}
     });
+    const [previousMonthStats, setPreviousMonthStats] = useState({
+        requests: 0,
+        attestations: 0
+    });
 
     // Time filter states
     const [timeFilter, setTimeFilter] = useState("all");
@@ -281,6 +285,21 @@ function Dashboard() {
                     });
                 }
 
+                // Calculate previous month's stats
+                const now = new Date();
+                const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+                const previousMonthRequests = response.data.filter(req => {
+                    const reqDate = new Date(req.createdAt);
+                    return reqDate >= previousMonthStart && reqDate <= previousMonthEnd;
+                });
+
+                setPreviousMonthStats(prev => ({
+                    ...prev,
+                    requests: previousMonthRequests.length
+                }));
+
                 const stats = {
                     total: filteredRequests.length,
                     nouveau: filteredRequests.filter(req => req.etat === "NOUVEAU").length,
@@ -312,6 +331,21 @@ function Dashboard() {
                     });
                 }
 
+                // Calculate previous month's stats
+                const now = new Date();
+                const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+                const previousMonthAttestations = response.filter(att => {
+                    const attDate = new Date(att.createdAt);
+                    return attDate >= previousMonthStart && attDate <= previousMonthEnd;
+                });
+
+                setPreviousMonthStats(prev => ({
+                    ...prev,
+                    attestations: previousMonthAttestations.length
+                }));
+
                 // Count by status
                 const deposé = filteredAttestations.filter(att => att.status === "déposé").length;
                 const livré = filteredAttestations.filter(att => att.status === "livré").length;
@@ -340,9 +374,21 @@ function Dashboard() {
         }
     };
 
+    // Calculate percentage change
+    const calculatePercentageChange = (current, previous) => {
+        if (previous === 0) return current > 0 ? "+100%" : "0%";
+        const change = ((current - previous) / previous) * 100;
+        return `${change >= 0 ? "+" : ""}${Math.round(change)}%`;
+    };
+
     // Chart Data for Requests
     const requestChartData = {
-        labels: ['Nouveau', 'En Traitement', 'Traité', 'Rejeté'],
+        labels: [
+            `Nouveau (${requestStats.total > 0 ? Math.round((requestStats.nouveau / requestStats.total) * 100) : 0}%)`,
+            `En Traitement (${requestStats.total > 0 ? Math.round((requestStats.enTraitement / requestStats.total) * 100) : 0}%)`,
+            `Traité (${requestStats.total > 0 ? Math.round((requestStats.traite / requestStats.total) * 100) : 0}%)`,
+            `Rejeté (${requestStats.total > 0 ? Math.round((requestStats.rejete / requestStats.total) * 100) : 0}%)`
+        ],
         datasets: [
             {
                 label: 'Demandes par statut',
@@ -361,6 +407,33 @@ function Dashboard() {
                 borderWidth: 1,
             },
         ],
+    };
+
+    // Add chart options for better percentage display
+    const pieOptions = {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: {
+                    padding: 20,
+                    font: {
+                        size: 12
+                    }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function (context) {
+                        const label = context.label || '';
+                        const value = context.raw || 0;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                        return `${label}: ${value} (${percentage}%)`;
+                    }
+                }
+            }
+        }
     };
 
     // Chart Data for Attestations by Status
@@ -633,9 +706,9 @@ function Dashboard() {
                         icon={ReceiptIcon}
                         title="Total Demandes"
                         value={requestStats.total}
-                        secondaryValue="+15%"
+                        secondaryValue={calculatePercentageChange(requestStats.total, previousMonthStats.requests)}
                         secondaryLabel="vs mois dernier"
-                        trend="up"
+                        trend={requestStats.total > previousMonthStats.requests ? "up" : "down"}
                         color={theme.palette.primary.main}
                     />
                 </Grid>
@@ -644,9 +717,9 @@ function Dashboard() {
                         icon={DescriptionIcon}
                         title="Total Attestations"
                         value={attestationStats.total}
-                        secondaryValue="+8%"
+                        secondaryValue={calculatePercentageChange(attestationStats.total, previousMonthStats.attestations)}
                         secondaryLabel="vs mois dernier"
-                        trend="up"
+                        trend={attestationStats.total > previousMonthStats.attestations ? "up" : "down"}
                         color={theme.palette.secondary.main}
                     />
                 </Grid>
@@ -727,7 +800,7 @@ function Dashboard() {
                                 </IconButton>
                             </Box>
                             <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Pie data={requestChartData} />
+                                <Pie data={requestChartData} options={pieOptions} />
                             </Box>
                         </Paper>
                     </Grid>

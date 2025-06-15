@@ -13,11 +13,14 @@ import {
     InputAdornment,
     Fade,
     Zoom,
+    IconButton,
 } from "@mui/material";
 import {
     Login as LoginIcon,
     Person as PersonIcon,
     Lock as LockIcon,
+    Visibility as VisibilityIcon,
+    VisibilityOff as VisibilityOffIcon,
 } from "@mui/icons-material";
 import AuthService from "../services/auth.service";
 import { APP_NAME } from "../config/constants";
@@ -28,6 +31,7 @@ function Login() {
     const [password, setPassword] = useState("");
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     // Check if user is already logged in
     useEffect(() => {
@@ -48,18 +52,18 @@ function Login() {
         } catch (error) {
             console.error("Login error:", error);
 
-            let errorMessage = "Une erreur s'est produite lors de la connexion";
+            let errorMessage = "An error occurred during login";
 
             if (error.response) {
                 console.error("Error response:", error.response);
                 errorMessage = error.response.data?.message ||
-                    `Erreur serveur: ${error.response.status}`;
+                    `Server error: ${error.response.status}`;
             } else if (error.request) {
                 console.error("No response received:", error.request);
-                errorMessage = "Aucune réponse du serveur. Veuillez vérifier votre connexion.";
+                errorMessage = "No response from server. Please check your connection.";
             } else {
                 console.error("Error:", error.message);
-                errorMessage = `Erreur: ${error.message}`;
+                errorMessage = `Error: ${error.message}`;
             }
 
             setMessage(errorMessage);
@@ -162,7 +166,7 @@ function Login() {
                                             WebkitTextFillColor: 'transparent'
                                         }}
                                     >
-                                        Bienvenue sur la plateforme
+                                        Welcome to the platform
                                     </Typography>
                                 </Fade>
                                 <Fade in timeout={1000} style={{ transitionDelay: '900ms' }}>
@@ -174,7 +178,7 @@ function Login() {
                                             lineHeight: 1.4
                                         }}
                                     >
-                                        Connectez-vous pour accéder à votre espace
+                                        Sign in to access your space
                                     </Typography>
                                 </Fade>
                                 <Fade in timeout={1000} style={{ transitionDelay: '1200ms' }}>
@@ -186,7 +190,7 @@ function Login() {
                                             lineHeight: 1.5
                                         }}
                                     >
-                                        Gérez vos demandes et suivez leur progression en toute simplicité
+                                        Manage your requests and track their progress with ease
                                     </Typography>
                                 </Fade>
                             </Box>
@@ -229,7 +233,7 @@ function Login() {
                                         letterSpacing: '-0.5px'
                                     }}
                                 >
-                                    Connexion
+                                    Sign In
                                 </Typography>
 
                                 {message && (
@@ -255,7 +259,7 @@ function Login() {
                                         required
                                         fullWidth
                                         id="username"
-                                        label="Nom d'utilisateur"
+                                        label="Username"
                                         name="username"
                                         autoComplete="username"
                                         autoFocus
@@ -289,8 +293,8 @@ function Login() {
                                         required
                                         fullWidth
                                         name="password"
-                                        label="Mot de passe"
-                                        type="password"
+                                        label="Password"
+                                        type={showPassword ? "text" : "password"}
                                         id="password"
                                         autoComplete="current-password"
                                         value={password}
@@ -299,6 +303,17 @@ function Login() {
                                             startAdornment: (
                                                 <InputAdornment position="start">
                                                     <LockIcon color="primary" />
+                                                </InputAdornment>
+                                            ),
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        aria-label="toggle password visibility"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        edge="end"
+                                                    >
+                                                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                                                    </IconButton>
                                                 </InputAdornment>
                                             ),
                                         }}
@@ -345,7 +360,7 @@ function Login() {
                                             }
                                         }}
                                     >
-                                        {loading ? "Connexion..." : "Se Connecter"}
+                                        {loading ? "Signing in..." : "Sign In"}
                                     </Button>
 
                                     <Box sx={{ textAlign: 'center' }}>
@@ -367,7 +382,7 @@ function Login() {
                                                 }
                                             }}
                                         >
-                                            Mot de passe oublié ? Contactez votre administrateur
+                                            Forgot password? Contact your administrator
                                         </Typography>
                                     </Box>
                                 </Box>
