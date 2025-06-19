@@ -11,6 +11,7 @@ import { setupAxios } from './services/axios-config';
 // Components
 import AppBar from "./components/AppBar";
 import Sidebar from "./components/Sidebar";
+import Chatbot from './components/Chatbot';
 
 // Pages
 import Login from "./pages/Login";
@@ -409,6 +410,8 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+
+                        <Route path="/chatbot" element={<Chatbot sidebarOpen={sidebarOpen} />} />
 
                         <Route path="*" element={<NotFound />} />
                     </Routes>

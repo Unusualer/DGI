@@ -33,7 +33,8 @@ import {
     Article as ArticleIcon,
     Summarize as SummarizeIcon,
     Assessment as AssessmentIcon,
-    MoreHoriz as MoreHorizIcon
+    MoreHoriz as MoreHorizIcon,
+    Chat as ChatIcon
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 
@@ -90,6 +91,14 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
         }
     }, [isAttestationSection, isRequestsSection]);
 
+    const menuItems = [
+        {
+            text: 'Accueil',
+            icon: <HomeIcon />,
+            path: '/'
+        },
+    ];
+
     return (
         <Drawer
             variant="permanent"
@@ -121,63 +130,66 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
             <Divider />
 
             <List sx={{ pt: 1 }} component="nav">
-                {/* Accueil - Home */}
-                <ListItem
-                    disablePadding
-                    sx={{
-                        display: "block",
-                        mb: 0.5,
-                    }}
-                >
-                    <ListItemButton
-                        component={Link}
-                        to="/"
+                {/* Menu Items */}
+                {menuItems.map((item) => (
+                    <ListItem
+                        key={item.text}
+                        disablePadding
                         sx={{
-                            minHeight: 48,
-                            justifyContent: open ? "initial" : "center",
-                            px: 2.5,
-                            py: 1.2,
-                            mx: 1,
-                            borderRadius: 1.5,
-                            backgroundColor: location.pathname === "/"
-                                ? (theme) => alpha(theme.palette.primary.main, 0.1)
-                                : "inherit",
-                            '&:hover': {
-                                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                                '& .MuiListItemIcon-root': {
-                                    color: 'primary.main',
-                                },
-                                '& .MuiListItemText-primary': {
-                                    color: 'primary.main',
-                                }
-                            },
-                            color: location.pathname === "/"
-                                ? 'primary.main'
-                                : 'text.primary',
+                            display: "block",
+                            mb: 0.5,
                         }}
                     >
-                        <ListItemIcon
+                        <ListItemButton
+                            component={Link}
+                            to={item.path}
                             sx={{
-                                minWidth: 0,
-                                mr: open ? 2.5 : "auto",
-                                justifyContent: "center",
-                                color: 'inherit'
+                                minHeight: 48,
+                                justifyContent: open ? "initial" : "center",
+                                px: 2.5,
+                                py: 1.2,
+                                mx: 1,
+                                borderRadius: 1.5,
+                                backgroundColor: location.pathname === item.path
+                                    ? (theme) => alpha(theme.palette.primary.main, 0.1)
+                                    : "inherit",
+                                '&:hover': {
+                                    backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                    '& .MuiListItemIcon-root': {
+                                        color: 'primary.main',
+                                    },
+                                    '& .MuiListItemText-primary': {
+                                        color: 'primary.main',
+                                    }
+                                },
+                                color: location.pathname === item.path
+                                    ? 'primary.main'
+                                    : 'text.primary',
                             }}
                         >
-                            <HomeIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                            primary="Accueil"
-                            sx={{
-                                opacity: open ? 1 : 0,
-                                '& .MuiListItemText-primary': {
-                                    fontWeight: location.pathname === "/" ? 600 : 400,
-                                    fontSize: '0.9rem'
-                                }
-                            }}
-                        />
-                    </ListItemButton>
-                </ListItem>
+                            <ListItemIcon
+                                sx={{
+                                    minWidth: 0,
+                                    mr: open ? 2.5 : "auto",
+                                    justifyContent: "center",
+                                    color: 'inherit'
+                                }}
+                            >
+                                {item.icon}
+                            </ListItemIcon>
+                            <ListItemText
+                                primary={item.text}
+                                sx={{
+                                    opacity: open ? 1 : 0,
+                                    '& .MuiListItemText-primary': {
+                                        fontWeight: location.pathname === item.path ? 600 : 400,
+                                        fontSize: '0.9rem'
+                                    }
+                                }}
+                            />
+                        </ListItemButton>
+                    </ListItem>
+                ))}
 
                 {/* Dashboard for MANAGER */}
                 {currentUser && currentUser.role === "ROLE_MANAGER" && (
@@ -587,6 +599,64 @@ function Sidebar({ currentUser, open, toggleSidebar }) {
                         </ListItemButton>
                     </ListItem>
                 )}
+
+                {/* Chatbot - Last item */}
+                <ListItem
+                    disablePadding
+                    sx={{
+                        display: "block",
+                        mb: 0.5,
+                    }}
+                >
+                    <ListItemButton
+                        component={Link}
+                        to="/chatbot"
+                        sx={{
+                            minHeight: 48,
+                            justifyContent: open ? "initial" : "center",
+                            px: 2.5,
+                            py: 1.2,
+                            mx: 1,
+                            borderRadius: 1.5,
+                            backgroundColor: location.pathname === "/chatbot"
+                                ? (theme) => alpha(theme.palette.primary.main, 0.1)
+                                : "inherit",
+                            '&:hover': {
+                                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                '& .MuiListItemIcon-root': {
+                                    color: 'primary.main',
+                                },
+                                '& .MuiListItemText-primary': {
+                                    color: 'primary.main',
+                                }
+                            },
+                            color: location.pathname === "/chatbot"
+                                ? 'primary.main'
+                                : 'text.primary',
+                        }}
+                    >
+                        <ListItemIcon
+                            sx={{
+                                minWidth: 0,
+                                mr: open ? 2.5 : "auto",
+                                justifyContent: "center",
+                                color: 'inherit'
+                            }}
+                        >
+                            <ChatIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                            primary="Chatbot"
+                            sx={{
+                                opacity: open ? 1 : 0,
+                                '& .MuiListItemText-primary': {
+                                    fontWeight: location.pathname === "/chatbot" ? 600 : 400,
+                                    fontSize: '0.9rem'
+                                }
+                            }}
+                        />
+                    </ListItemButton>
+                </ListItem>
             </List>
 
             {open && (

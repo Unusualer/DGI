@@ -43,6 +43,19 @@ services:
       - dgi-network
     restart: unless-stopped
 
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - dgi-network
+    restart: unless-stopped
+
 networks:
   dgi-network:
     driver: bridge
+
+volumes:
+  ollama_data:
